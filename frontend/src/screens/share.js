@@ -1,8 +1,7 @@
 import { View, Text, StyleSheet, Dimensions, Platform, PermissionsAndroid, TouchableOpacity, TextInput } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { GOOGLE_MAPS_API_KEY } from '../../config/constants';
-import 'react-native-get-random-values';
+import { GOOGLE_MAPS_API_KEY } from '../config/constants';
 import MapViewDirections from 'react-native-maps-directions';
 import GetLocation from 'react-native-get-location';
 
