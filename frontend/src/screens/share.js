@@ -1,11 +1,12 @@
-import { View, Text, StyleSheet, Dimensions, Platform, PermissionsAndroid, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Platform, PermissionsAndroid, TouchableOpacity, TextInput, Image, Animated, PanResponder } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { GOOGLE_MAPS_API_KEY } from '../config/constants';
-import MapViewDirections from 'react-native-maps-directions';
+import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
+import { launchImageLibrary } from 'react-native-image-picker';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import GetLocation from 'react-native-get-location';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
 
 const styles = StyleSheet.create({
     container: {
@@ -20,41 +21,54 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         position: 'absolute',
-        top: 80,
+        bottom: 0,
         width: width * 0.9,
         paddingHorizontal: 10,
-        flexDirection: 'row',
-        alignItems: 'center', 
+        backgroundColor: '#fafafa',
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        padding: 15,
+        alignItems: 'center',
+        elevation: 5,
     },
     input: {
-        flex: 1, 
-        height: 50,
+        width: '100%',
+        height: 100,
         borderColor: '#e0e0e0',
         borderWidth: 1,
         backgroundColor: '#fafafa',
         borderRadius: 25,
         paddingHorizontal: 15,
         fontSize: 16,
-        marginRight: 10, 
+        marginBottom: 10,
+        textAlignVertical: 'top', // Make it multiline
+    },
+    imagePreview: {
+        width: '100%',
+        height: 150,
+        borderRadius: 10,
+        marginBottom: 10,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
     },
     submitButton: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#708D81',
         borderRadius: 25,
         paddingHorizontal: 20,
         paddingVertical: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     submitbuttonText: {
         color: '#fff',
         fontSize: 16,
     },
-    buttonText: {
-        color: '#007BFF',
-        fontSize: 16,
-        textAlign: 'center',
-    },
     buttonContainer: {
         position: 'absolute',
-        bottom: 30,
+        top: 30,
         right: 20,
         zIndex: 2,
         backgroundColor: '#fff',
@@ -62,27 +76,83 @@ const styles = StyleSheet.create({
         padding: 10,
         elevation: 5,
     },
+    imageButton: {
+        backgroundColor: '#708D81',
+        borderRadius: 25,
+        padding: 10,
+        marginRight: 10, 
+    },
+    calloutContainer: {
+        backgroundColor: '#fff', 
+        borderRadius: 10,
+        padding: 10,
+        borderColor: '#001427', 
+        borderWidth: 1,
+        width: 150,
+    },
+    
+    calloutText: {
+        color: '#001427', 
+        fontSize: 14,
+        fontWeight: 'bold', 
+    },
+    image: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        marginBottom: 5,
+    },
 });
 
 export default function ShareScreen({}) {
     const mapRef = useRef(null);
-    const [origin, setOrigin] = useState();
-    const [destination, setDestination] = useState();
     const [permissionGranter, setPermissionGranter] = useState();
-    const [query, setQuery] = useState(''); 
-    
+    const [postText, setPostText] = useState(''); 
+    const [currentLocation, setCurrentLocation] = useState(null);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [userPosts, setUserPosts] = useState([]); // To store the user posts
+    const slideAnim = useRef(new Animated.Value(0)).current;
+
     const handleSubmit = () => {
-        if (query.trim()) {
-            // sending the query to a backend service
-            console.log("Submitted query:", query);
-            // reset the input field
-            setQuery('');
+        if (postText.trim() || selectedImage) {
+            // get time
+            const timestamp = new Date().toISOString();
+
+            // Save the post (text + image) and location
+            const newPost = {
+                location: currentLocation,
+                text: postText,
+                image: selectedImage,
+                timestamp: timestamp,
+            };
+            // TODO: 後端獲取資料: JSON.stringify(newPost)
+
+            setUserPosts([...userPosts, newPost]);
+
+            // Reset fields
+            setPostText('');
+            setSelectedImage(null);
         }
+    };
+
+    const selectImage = () => {
+        launchImageLibrary({ mediaType: 'photo' }, response => {
+            if (!response.didCancel && !response.errorCode) {
+                const uri = response.assets[0]?.uri;
+                setSelectedImage(uri);
+            }
+        });
     };
 
     useEffect(() => {
         _getLocationPermission();
     }, []);
+
+    useEffect(() => {
+        if (permissionGranter) {
+            _getCurrentLocation();
+        }
+    }, [permissionGranter]);
 
     async function _getLocationPermission() {
         if (Platform.OS === 'android') {
@@ -115,12 +185,11 @@ export default function ShareScreen({}) {
                 enableHighAccuracy: true,
                 timeout: 60000,
             });
-            console.log('My current location:', location);
-
             const currentCoordinate = {
                 latitude: location.latitude,
                 longitude: location.longitude,
             };
+            setCurrentLocation(currentCoordinate);
             moveToLocation(currentCoordinate.latitude, currentCoordinate.longitude);
         } catch (error) {
             console.warn('Error getting current location:', error);
@@ -139,6 +208,23 @@ export default function ShareScreen({}) {
         );
     }
 
+    /* animation */
+    // const slideUp = () => {
+    //     Animated.timing(slideAnim, {
+    //         toValue: -height * 0.5, // Move it upwards
+    //         duration: 300,
+    //         useNativeDriver: true,
+    //     }).start();
+    // };
+
+    // const slideDown = () => {
+    //     Animated.timing(slideAnim, {
+    //         toValue: 0, // Reset position
+    //         duration: 300,
+    //         useNativeDriver: true,
+    //     }).start();
+    // };
+
     if (!permissionGranter) return (
         <View>
             <Text>Please allow permission to continue...</Text>
@@ -151,45 +237,116 @@ export default function ShareScreen({}) {
                 ref={mapRef}
                 provider={PROVIDER_GOOGLE}
                 style={styles.map}
-                region={{
-                    latitude: 24.787926,
+                region={currentLocation ? {
+                    latitude: currentLocation.latitude,
+                    longitude: currentLocation.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                } : {
+                    // Fallback value if location is not available yet
+                    latitude: 24.787926,  
                     longitude: 120.997576,
                     latitudeDelta: 0.01,
                     longitudeDelta: 0.01,
                 }}>
-                {origin !== undefined ? <Marker coordinate={origin}></Marker> : null}
-                {destination !== undefined ? <Marker coordinate={destination}></Marker> : null}
-                {origin !== undefined && destination !== undefined ? (
-                    <MapViewDirections
-                        origin={origin}
-                        destination={destination}
-                        apikey={GOOGLE_MAPS_API_KEY}
-                        strokeColor='blue'
-                        strokeWidth={4}
-                    />
-                ) : null}
-            </MapView>
+                {/* Display all user posts as markers */}
+                {userPosts.map((post, index) => (
+                    <Marker 
+                        style={styles.markerContainer}
+                        key={index}
+                        coordinate={post.location}
+                        // title="User name"
+                        // description={post.text}
+                    >
+                        {post.image && (
+                            <Image
+                                source={{ uri: post.image }}
+                                style={styles.image}
+                            />
+                        )}
 
-            {/* Input Box for Search Query */}
+                        <Callout tooltip>
+                            <View style={styles.calloutContainer}>
+                                <Text style={styles.calloutText}>{post.text}</Text>
+                            </View>
+                        </Callout>
+
+                    </Marker>
+                ))}
+
+                {currentLocation && (
+                    <Marker
+                        coordinate={currentLocation}
+                        // title="My Location"
+                        // description="You are here"
+                    />
+                )}
+            </MapView>
+            
+            {/* Input Box for Posting */}
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
-                    placeholder="Enter your query"
+                    placeholder="Wanna share something?"
                     placeholderTextColor="#b0b0b0"
-                    value={query}
-                    onChangeText={setQuery} // Update state with input
+                    value={postText}
+                    onChangeText={setPostText}
+                    multiline
                 />
-                {/* Submit Button */}
-                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                    <Text style={styles.submitbuttonText}>Submit</Text>
-                </TouchableOpacity>
-            </View>
 
-            {/* Get Location Button */}
-            <TouchableOpacity 
-                style={styles.buttonContainer} 
-                onPress={_getCurrentLocation}>
-                <Text style={styles.buttonText}>My Location</Text>
+                {/* Image Preview  */}
+                {selectedImage && (
+                    <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
+                )}
+
+                {/* Button Row for Image Picker and Submit */}
+                <View style={styles.buttonRow}>
+                    {/* Image Picker Button */}
+                    <TouchableOpacity style={styles.imageButton} onPress={selectImage}>
+                        <MaterialCommunityIcons name="image" size={24} color="#fff" />
+                    </TouchableOpacity>
+
+                    {/* Submit Button */}
+                    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                        <Text style={styles.submitbuttonText}>Submit</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+            
+            
+            {/* <Animated.View style={[styles.inputContainer, { transform: [{ translateY: slideAnim }] }]}>
+                <TouchableOpacity onPress={slideUp}>
+                    <Text style={{ color: 'grey', marginBottom: 5 }}>Swipe Up</Text>
+                </TouchableOpacity>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Wanna share something?"
+                    value={postText}
+                    onChangeText={setPostText}
+                    multiline
+                />
+                {selectedImage && (
+                    <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
+                )}
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity style={styles.imageButton} onPress={selectImage}>
+                        <MaterialCommunityIcons name="image" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                        <Text style={styles.submitButtonText}>Submit</Text>
+                    </TouchableOpacity>
+                </View>
+            </Animated.View> */}
+
+            {/* Move to Current Location Button */}
+            <TouchableOpacity
+                style={styles.buttonContainer}
+                onPress={() => {
+                    if (currentLocation) {
+                        moveToLocation(currentLocation.latitude, currentLocation.longitude);
+                    }
+                }}>
+                <MaterialCommunityIcons name="map-marker" size={24} color="#001427" />
             </TouchableOpacity>
         </View>
     );
