@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     calloutText: {
         color: '#001427', 
         fontSize: 14,
-        fontWeight: 'bold', 
+        fontWeight: '500', 
     },
     image: {
         width: 40,
@@ -243,8 +243,8 @@ export default function ShareScreen({}) {
                     longitudeDelta: 0.01,
                 } : {
                     // Fallback value if location is not available yet
-                    latitude: 24.787926,  
-                    longitude: 120.997576,
+                    latitude: 25.01349,  
+                    longitude: 121.540646,
                     latitudeDelta: 0.01,
                     longitudeDelta: 0.01,
                 }}>
@@ -267,6 +267,7 @@ export default function ShareScreen({}) {
                         <Callout tooltip>
                             <View style={styles.calloutContainer}>
                                 <Text style={styles.calloutText}>{post.text}</Text>
+                                <Text style={{color: '#8c8c8c', fontSize: 12}}>{new Date(post.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                             </View>
                         </Callout>
 

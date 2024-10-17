@@ -1,106 +1,134 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons'; 
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, FlatList, Keyboard } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+
+const { width, height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 10,
-    backgroundColor: '#fff',
-  },
-  messageContainer: {
-    flex: 1,
-    marginBottom: 10,
-  },
-  messageBubble: {
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
-    maxWidth: '70%',
-  },
-  userMessage: {
-    backgroundColor: '#a2cbba',
-    alignSelf: 'flex-end',
-  },
-  botMessage: {
-    backgroundColor: '#f1f0f0',
-    alignSelf: 'flex-start',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderColor: '#ddd',
-    paddingTop: 10,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    marginRight: 10,
-  },
-  messageText: {
-    fontSize: 16,
-    fontWeight: '500' 
-  }
+    container: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
+    chatContainer: {
+        flex: 1,
+        paddingHorizontal: 10,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
+    },
+    input: {
+        flex: 1,
+        height: 40,
+        borderColor: '#e0e0e0',
+        borderWidth: 1,
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        marginRight: 10,
+        fontSize: 16,
+    },
+    sendButton: {
+        backgroundColor: '#708D81',
+        borderRadius: 20,
+        padding: 10,
+    },
+    messageContainer: {
+        maxWidth: '80%',
+        padding: 10,
+        borderRadius: 10,
+        marginVertical: 5,
+    },
+    userMessage: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#708D81',
+    },
+    systemMessage: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#fff',
+    },
+    messageText: {
+        fontSize: 16,
+    },
+    userMessageText: {
+        color: '#fff',
+    },
+    systemMessageText: {
+        color: '#000',
+    },
 });
 
-function AskScreen({}) {
-  const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
+export default function AskScreen() {
+    const [messages, setMessages] = useState([]);
+    const [inputText, setInputText] = useState('');
+    const flatListRef = useRef(null);
 
-  const sendMessage = () => {
-    if (inputText.trim()) {
-      // 將用戶的訊息加入到訊息列表中
-      const newMessages = [...messages, { text: inputText, sender: 'user' }];
-      setMessages(newMessages);
+    const handleSend = () => {
+        if (inputText.trim()) {
+            const newUserMessage = {
+                id: messages.length,
+                text: inputText.trim(),
+                isUser: true,
+            };
+            setMessages([...messages, newUserMessage]);
+            setInputText('');
+            
+            // replace with actual API call
+            setTimeout(() => {
+                const systemResponse = {
+                    id: messages.length + 1,
+                    text: `Here's a response to: "${inputText.trim()}"`,
+                    isUser: false,
+                };
+                setMessages(prevMessages => [...prevMessages, systemResponse]);
+            }, 1000);
+        }
+    };
 
-      // 清空輸入框
-      setInputText('');
+    useEffect(() => {
+        if (flatListRef.current) {
+            flatListRef.current.scrollToEnd({ animated: true });
+        }
+    }, [messages]);
 
-      // 模擬對方的回覆
-      setTimeout(() => {
-        setMessages(prevMessages => [
-          ...prevMessages,
-          { text: 'This is a reply from the other person.', sender: 'bot' }
-        ]);
-      }, 1000); // 模擬1秒延遲
-    }
-  };
+    const renderMessage = ({ item }) => (
+        <View style={[
+            styles.messageContainer,
+            item.isUser ? styles.userMessage : styles.systemMessage
+        ]}>
+            <Text style={[
+                styles.messageText,
+                item.isUser ? styles.userMessageText : styles.systemMessageText
+            ]}>
+                {item.text}
+            </Text>
+        </View>
+    );
 
-  return (
-    <View style={styles.container}>
-      {/* 滾動視圖顯示所有訊息 */}
-      <ScrollView style={styles.messageContainer}>
-        {messages.map((message, index) => (
-          <View
-            key={index}
-            style={[
-              styles.messageBubble,
-              message.sender === 'user' ? styles.userMessage : styles.botMessage
-            ]}
-          >
-            <Text style={styles.messageText}>{message.text}</Text> 
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* 輸入框和發送按鈕 */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message"
-          value={inputText}
-          onChangeText={text => setInputText(text)}
-        />
-        <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-          <Icon name="arrow-forward-circle" size={32} color="#001427" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    return (
+        <View style={styles.container}>
+            <FlatList
+                ref={flatListRef}
+                data={messages}
+                renderItem={renderMessage}
+                keyExtractor={item => item.id.toString()}
+                style={styles.chatContainer}
+            />
+            <View style={styles.inputContainer}>
+                <TextInput
+                    style={styles.input}
+                    value={inputText}
+                    onChangeText={setInputText}
+                    placeholder="Ask a question..."
+                    onSubmitEditing={handleSend}
+                />
+                <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+                    <MaterialCommunityIcons name="send" size={24} color="#fff" />
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
 }
-
-export default AskScreen;
