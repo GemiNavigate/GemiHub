@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, FlatList, Keyboard } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import GetLocation from 'react-native-get-location';
 
 const { width, height } = Dimensions.get('window');
 
@@ -61,10 +62,12 @@ const styles = StyleSheet.create({
     },
 });
 
-export default function AskScreen() {
+export default function AskScreen({route}) {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const flatListRef = useRef(null);
+    const { currentLocation } = route.params;
+    const locationString = `(${currentLocation.latitude.toFixed(5)}, ${currentLocation.longitude.toFixed(5)})`;
 
     const handleSend = () => {
         if (inputText.trim()) {
@@ -72,19 +75,50 @@ export default function AskScreen() {
                 id: messages.length,
                 text: inputText.trim(),
                 isUser: true,
+                time: new Date().toISOString()
             };
             setMessages([...messages, newUserMessage]);
             setInputText('');
-            
+
+            // Prepare data to send to the backend
+            const dataToSend = {
+              content: inputText.trim(),
+              metadata: {
+                  location:{
+                    latitude: currentLocation.latitude,
+                    longitude: currentLocation.longitude,
+                  },
+                  time: newUserMessage.time,  // Current time
+              }
+            };
+
             // replace with actual API call
             setTimeout(() => {
                 const systemResponse = {
                     id: messages.length + 1,
-                    text: `Here's a response to: "${inputText.trim()}"`,
+                    text: `Here's a response to: "${inputText.trim()}" from location ${locationString}`,
                     isUser: false,
                 };
                 setMessages(prevMessages => [...prevMessages, systemResponse]);
             }, 1000);
+
+            // Send data to the backend
+            // fetch('YOUR_BACKEND_URL_HERE', {
+            //   method: 'POST',
+            //   headers: {
+            //       'Content-Type': 'application/json',
+            //   },
+            //   body: JSON.stringify(dataToSend),  // Convert the data to JSON
+            // })
+            // .then(response => response.json())
+            // .then(responseData => {
+            //   console.log('Response from backend:', responseData);
+            //   // Handle any additional response logic here if needed
+            // })
+            // .catch(error => {
+            //   console.error('Error sending data to backend:', error);
+            // });
+
         }
     };
 

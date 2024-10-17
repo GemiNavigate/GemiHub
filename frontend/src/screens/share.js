@@ -4,6 +4,7 @@ import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import { launchImageLibrary } from 'react-native-image-picker';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import GetLocation from 'react-native-get-location';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -111,6 +112,8 @@ export default function ShareScreen({}) {
     const [selectedImage, setSelectedImage] = useState(null);
     const [userPosts, setUserPosts] = useState([]); // To store the user posts
     const slideAnim = useRef(new Animated.Value(0)).current;
+    const navigation = useNavigation();
+    const [isInputExpanded, setIsInputExpanded] = useState(false);
 
     const handleSubmit = () => {
         if (postText.trim() || selectedImage) {
@@ -125,6 +128,17 @@ export default function ShareScreen({}) {
                 timestamp: timestamp,
             };
             // TODO: 後端獲取資料: JSON.stringify(newPost)
+            const dataToSend = {
+                content: postText.trim(),
+                image: selectedImage,
+                metadata: {
+                    location:{
+                      latitude: currentLocation.latitude,
+                      longitude: currentLocation.longitude,
+                    },
+                    time: timestamp,  // Current time
+                }
+              };
 
             setUserPosts([...userPosts, newPost]);
 
@@ -206,23 +220,29 @@ export default function ShareScreen({}) {
             2000,
         );
     }
+    useEffect(() => {
+        if (currentLocation) {
+            handleNavigateToAsk();
+        }
+    }, [currentLocation]);
 
+    const handleNavigateToAsk = () => {
+        if (currentLocation) {
+            navigation.navigate('Ask', { currentLocation });
+        } else {
+            alert('Current location is not available. Please try again later.');
+        }
+    };
     /* animation */
-    // const slideUp = () => {
-    //     Animated.timing(slideAnim, {
-    //         toValue: -height * 0.5, // Move it upwards
-    //         duration: 300,
-    //         useNativeDriver: true,
-    //     }).start();
-    // };
-
-    // const slideDown = () => {
-    //     Animated.timing(slideAnim, {
-    //         toValue: 0, // Reset position
-    //         duration: 300,
-    //         useNativeDriver: true,
-    //     }).start();
-    // };
+    const toggleInputContainer = () => {
+        Animated.timing(slideAnim, {
+            toValue: slideAnim._value === 0 ? 110 : 0, // Adjust this value based on your design
+            duration: 200,
+            useNativeDriver: true,
+        }).start(() => {
+            setIsInputExpanded(!isInputExpanded); // Update the expansion state
+        });
+    };
 
     if (!permissionGranter) return (
         <View>
@@ -282,9 +302,10 @@ export default function ShareScreen({}) {
                     />
                 )}
             </MapView>
-            
+        
+
             {/* Input Box for Posting */}
-            <View style={styles.inputContainer}>
+            {/* <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
                     placeholder="Wanna share something?"
@@ -294,33 +315,33 @@ export default function ShareScreen({}) {
                     multiline
                 />
 
-                {/* Image Preview  */}
+                Image Preview 
                 {selectedImage && (
                     <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
                 )}
 
-                {/* Button Row for Image Picker and Submit */}
+                Button Row for Image Picker and Submit
                 <View style={styles.buttonRow}>
-                    {/* Image Picker Button */}
+                    Image Picker Button
                     <TouchableOpacity style={styles.imageButton} onPress={selectImage}>
                         <MaterialCommunityIcons name="image" size={24} color="#fff" />
                     </TouchableOpacity>
 
-                    {/* Submit Button */}
+                    Submit Button
                     <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
                         <Text style={styles.submitbuttonText}>Submit</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
-            
-            
-            {/* <Animated.View style={[styles.inputContainer, { transform: [{ translateY: slideAnim }] }]}>
-                <TouchableOpacity onPress={slideUp}>
-                    <Text style={{ color: 'grey', marginBottom: 5 }}>Swipe Up</Text>
+            </View> */}
+
+            <Animated.View style={[styles.inputContainer, { transform: [{ translateY: slideAnim }] }]}>
+                <TouchableOpacity onPress={toggleInputContainer} style={styles.arrow}>
+                    <MaterialCommunityIcons name={isInputExpanded ? "arrow-up" : "arrow-down"} size={24} color="#708D81"/>
                 </TouchableOpacity>
                 <TextInput
                     style={styles.input}
                     placeholder="Wanna share something?"
+                    placeholderTextColor="#b0b0b0"
                     value={postText}
                     onChangeText={setPostText}
                     multiline
@@ -333,10 +354,10 @@ export default function ShareScreen({}) {
                         <MaterialCommunityIcons name="image" size={24} color="#fff" />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                        <Text style={styles.submitButtonText}>Submit</Text>
+                        <Text style={styles.submitbuttonText}>Post</Text>
                     </TouchableOpacity>
                 </View>
-            </Animated.View> */}
+            </Animated.View>
 
             {/* Move to Current Location Button */}
             <TouchableOpacity
