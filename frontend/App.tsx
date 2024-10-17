@@ -39,8 +39,8 @@ function App(): React.JSX.Element {
               // 返回圖標組件
               return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
             },
-            tabBarActiveTintColor: '#001427', // 活躍狀態的圖標顏色
-            tabBarInactiveTintColor: '#F4D58D', // 非活躍狀態的圖標顏色
+            tabBarActiveTintColor: '#F4D58D', // 活躍狀態的圖標顏色
+            tabBarInactiveTintColor: '#001427', // 非活躍狀態的圖標顏色
           })}
         >
           <Tab.Screen 
@@ -62,7 +62,7 @@ function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   header: {
     backgroundColor: '#001427',  
-    height: 50,
+    height: 60,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4, 
