@@ -1,3 +1,4 @@
+# currently not used
 from pymongo.mongo_client import MongoClient
 from dotenv import dotenv_values
 config = dotenv_values(".env")
