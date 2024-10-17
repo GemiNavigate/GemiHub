@@ -7,7 +7,6 @@ import GetLocation from 'react-native-get-location';
 
 const { width, height } = Dimensions.get('window');
 
-
 const styles = StyleSheet.create({
     container: {
         ...StyleSheet.absoluteFillObject,
