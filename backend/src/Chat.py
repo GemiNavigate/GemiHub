@@ -21,7 +21,7 @@ CORPUS_NAME=os.getenv("CORPUS_NAME")
 
 class ChatHandler():
     def __init__(self):
-        corpus_document = "corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx"
+        corpus_document = "corpora/gemihubcorpus-r9d1gxqgkfzp/documents/test-document-3-ihj5ponxjay"
         self.corpus = CorpusAgent(document=corpus_document)
         genai.configure(api_key=GEMINI_API_KEY)
         self.map_handler = MapHandler()
@@ -39,7 +39,7 @@ class ChatHandler():
             },
             "timestamp": {
                 "current_time": "",
-                "range": 60
+                "range": 3600
             }
         }
         # but if the time user specify is not in the interval [current_time-60min, current_time],
@@ -124,24 +124,31 @@ class ChatHandler():
             print("this is filter")
             filter = json.dumps(filter, indent=4)
             print(filter)
+            filter = json.loads(filter)
             text = response["text"]
+            answer = self.gen_answer(filter, text)
+            print("answer = ", answer)
         # return text
         else:
             text = response["text"]
+            print("answer = ", answer)
             
-    
     def gen_answer(self, filters: Dict[str, Dict], query: str) -> Dict:
-        self.corpus.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
+        response = self.corpus.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
+        return response
      
         
 if __name__ == "__main__":
     chat_handler = ChatHandler()
-    request = "is it raining in Chiao Tung University 30 min before?"
+    # request = "is it raining in Chiao Tung University 30 min before?"
     # request = "hello, what is your name"
+    request = "Is there any traffic accident in Taipei?"
+    print("echo request:", request)
     session = chat_handler.create_chat_session()
     response = chat_handler.get_response(session, request)
     print("response!!!")
     # print(response)
     response = json.dumps(response["parts"])
     print(response)
+    
 

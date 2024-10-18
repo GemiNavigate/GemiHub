@@ -193,10 +193,12 @@ class CorpusAgent:
             query=query_content,
             metadata_filters=self._generate_filters(filters)
         )
+        print("filter success!!!")
         req = glm.GenerateAnswerRequest(model=self.model_name,
                                         contents=[query_content],
                                         semantic_retriever=retriever_config,
                                         answer_style=answer_style)
+        print("req success")
         response = generative_service_client.generate_answer(req)
         print("response: ")
         # print(type(response.answer.content.parts[0].text))
