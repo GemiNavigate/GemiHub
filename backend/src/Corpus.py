@@ -186,29 +186,24 @@ if __name__ == "__main__":
     content = '''
 traffic accident! Aaah                   !
 '''
-    agent.add_info_to_document(content=content, lat=25.0329693, lng=121.5654177, time="2024-10-19 00:00:00")
-#     filters = {
-#         "location": {
-#             "lat":25.0329694,
-#             "lng":121.5654177,
-#             "dst":100.0
-#         },
-#         "timestamp": {
-#             "current_time": "2024-10-18 09:47:00",
-#             "range": 60
-#         }
-#     }
+    # agent.add_info_to_document(content=content, lat=25.0329693, lng=121.5654177, time="2024-10-19 00:00:00")
+    filters = {
+        "min_lat":24.0,
+        "max_lat":30.0,
+        "min_lng":115.0,
+        "max_lng":125.0,
+        "current_time": "2024-10-19 00:00:00",
+        "time_range": 60
+    }
 
-#     query = '''
-# Instruction: Answer by summarizing reports, don't jump to conclusions
-# my location(latitude, longitude): (25.0329694, 121.5654177)
-# question: are there any traffic accidents nearby?
-# '''
-#     # agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
-#     try:
-#         agent.generate_answer(filters=None, query=query, answer_style="VERBOSE")
-#     except Exception as e:
-#         print(e)
+    query = '''
+are there any traffic accidents nearby?
+'''
+    agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
+    try:
+        agent.generate_answer(filters=None, query=query, answer_style="VERBOSE")
+    except Exception as e:
+        print(e)
     # get_document_request = glm.GetDocumentRequest(name="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx")
 
     # # Make the request
