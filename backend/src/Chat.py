@@ -99,6 +99,7 @@ class ChatHandler():
             validate(instance=json_data, schema=self.filter_format)
         except Exception as e:
             print("invalid json format", e)
+        print(response)
         self.validate_response(response)
         
         
@@ -123,7 +124,7 @@ class ChatHandler():
         
 if __name__ == "__main__":
     chat_handler = ChatHandler()
-    # request = "is it raining in Chaung Tung University at 4 p.m.?"
+    request = "is it raining in Chaung Tung University at 4 p.m.?"
     # request = "hello, what is your name?"
     session = chat_handler.create_chat_session()
     response = chat_handler.get_response(session, request)
