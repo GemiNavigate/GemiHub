@@ -2,7 +2,7 @@ import google.generativeai as genai
 import google.ai.generativelanguage as glm
 from google.oauth2 import service_account
 from dotenv import load_dotenv
-from Corpus import CorpusAgent
+from ..src.Corpus import CorpusAgent
 from typing import Dict
 import json
 from jsonschema import validate
