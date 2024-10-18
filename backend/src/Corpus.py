@@ -201,7 +201,8 @@ class CorpusAgent:
         print("response: ")
         # print(type(response.answer.content.parts[0].text))
         print(response.answer.content.parts[0].text)
-        return response.answer.content.parts[0].text
+        print(response.answerable_probability)
+        return response.answer.content.parts[0].text, response.answerable_probability
     
 
 if __name__ == "__main__":
@@ -228,8 +229,8 @@ a traffic accident! Scary!
             "range": 60
         }
     }
-    agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
-    # agent.generate_answer(filters=filters, query="Are there any traffic accidents?", answer_style="VERBOSE")
+    # agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
+    agent.generate_answer(filters=filters, query="Are there any traffic accidents?", answer_style="VERBOSE")
     # get_document_request = glm.GetDocumentRequest(name="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx")
 
     # # Make the request
