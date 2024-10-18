@@ -199,8 +199,9 @@ class CorpusAgent:
                                         answer_style=answer_style)
         response = generative_service_client.generate_answer(req)
         print("response: ")
-        print(response)
-        return response
+        # print(type(response.answer.content.parts[0].text))
+        print(response.answer.content.parts[0].text)
+        return response.answer.content.parts[0].text
     
 
 if __name__ == "__main__":
@@ -215,7 +216,7 @@ location: Hsinchu, Guangfu rd.
 message:
 a traffic accident! Scary!
 '''
-    agent.add_info_to_document(content=content, lat=12.36, lng=112.65, time="2024-10-16 09:46:31")
+    # agent.add_info_to_document(content=content, lat=12.36, lng=112.65, time="2024-10-16 09:46:31")
     filters = {
         "location": {
             "lat":12.36,
@@ -228,7 +229,7 @@ a traffic accident! Scary!
         }
     }
     agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
-    agent.generate_answer(filters=filters, query="Are there any traffic accidents?", answer_style="VERBOSE")
+    # agent.generate_answer(filters=filters, query="Are there any traffic accidents?", answer_style="VERBOSE")
     # get_document_request = glm.GetDocumentRequest(name="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx")
 
     # # Make the request
