@@ -124,6 +124,7 @@ class ChatHandler():
             print("this is filter")
             filter = json.dumps(filter, indent=4)
             print(filter)
+            text = response["text"]
         # return text
         else:
             text = response["text"]
@@ -135,7 +136,7 @@ class ChatHandler():
         
 if __name__ == "__main__":
     chat_handler = ChatHandler()
-    request = "is it raining in Chiao Tung University 5 minute ago?"
+    request = "is it raining in Chiao Tung University 30 min before?"
     # request = "hello, what is your name"
     session = chat_handler.create_chat_session()
     response = chat_handler.get_response(session, request)
