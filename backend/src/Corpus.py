@@ -24,24 +24,6 @@ def time_to_timestamp(timestr):
     timestamp = datetime.strptime(timestr, time_format).timestamp()
     return timestamp
 
-def get_bounding_box(center_lat, center_lon, distance_km):
-    # Define the central point as a geopy Point object
-    center_point = Point(center_lat, center_lon)
-
-    # Calculate points in the four cardinal directions (north, south, east, west)
-    north_point = distance(kilometers=distance_km).destination(center_point, 0)   # 0 degrees -> north
-    south_point = distance(kilometers=distance_km).destination(center_point, 180) # 180 degrees -> south
-    east_point = distance(kilometers=distance_km).destination(center_point, 90)   # 90 degrees -> east
-    west_point = distance(kilometers=distance_km).destination(center_point, 270)  # 270 degrees -> west
-
-    # Bounding box coordinates
-    min_lat = south_point.latitude
-    max_lat = north_point.latitude
-    min_lng = west_point.longitude
-    max_lng = east_point.longitude
-
-    return (min_lat, max_lat, min_lng, max_lng)
-
 class CorpusAgent:
     retriever = retriever_service_client
     generator = generative_service_client
@@ -99,78 +81,63 @@ class CorpusAgent:
         print(response)
         return
     
-    def _generate_filters(self, filters: Dict[str, Dict]):
+    def _generate_filters(self, filters: Dict[str, Union[str, float]]):
         metadata_filters = []
-        for key, condition in filters.items():
-            if key=="location":
-                lat = condition["lat"]
-                lng = condition["lng"]
-                dst = condition["dst"]
-                min_lat, max_lat, min_lng, max_lng = get_bounding_box(lat, lng, dst)
-                lat_filter = glm.MetadataFilter(
-                    key="chunk.custom_metadata.latitude",
-                    conditions=[
-                        glm.Condition(
-                            numeric_value=max_lat,
-                            operation=glm.Condition.Operator.LESS_EQUAL
-                        ),
-                        glm.Condition(
-                            numeric_value=min_lat,
-                            operation=glm.Condition.Operator.GREATER_EQUAL
-                        )
-                    ]
-                )
-                lng_filter = glm.MetadataFilter(
-                    key="chunk.custom_metadata.longitude",
-                    conditions=[
-                        glm.Condition(
-                            numeric_value=max_lng,
-                            operation=glm.Condition.Operator.LESS_EQUAL
-                        ),
-                        glm.Condition(
-                            numeric_value=min_lng,
-                            operation=glm.Condition.Operator.GREATER_EQUAL
-                        )
-                    ]
-                )
+        min_lat = filters["min_lat"]
+        min_lng = filters["min_lng"]
+        max_lat = filters["max_lat"]
+        max_lng = filters["max_lng"]
+        current_time = filters["current_time"]
+        time_range = filters["time_range"]
 
-                metadata_filters.append(lat_filter)
-                metadata_filters.append(lng_filter)
-
-            elif key=="timestamp":
-                current_time = condition['current_time']
-                timestamp = time_to_timestamp(current_time)
-                time_range = condition['range']
-                time_filter = glm.MetadataFilter(
-                    key="chunk.custom_metadata.timestamp",
-                    conditions=[
-                        glm.Condition(
-                            numeric_value=(timestamp-time_range),
-                            operation=glm.Condition.Operator.GREATER_EQUAL
-                        )
-                    ]
+        lat_filter = glm.MetadataFilter(
+            key="chunk.custom_metadata.latitude",
+            conditions=[
+                glm.Condition(
+                    numeric_value=max_lat,
+                    operation=glm.Condition.Operator.LESS_EQUAL
+                ),
+                glm.Condition(
+                    numeric_value=min_lat,
+                    operation=glm.Condition.Operator.GREATER_EQUAL
                 )
+            ]
+        )
+        lng_filter = glm.MetadataFilter(
+            key="chunk.custom_metadata.longitude",
+            conditions=[
+                glm.Condition(
+                    numeric_value=max_lng,
+                    operation=glm.Condition.Operator.LESS_EQUAL
+                ),
+                glm.Condition(
+                    numeric_value=min_lng,
+                    operation=glm.Condition.Operator.GREATER_EQUAL
+                )
+            ]
+        )
+        metadata_filters.append(lat_filter)
+        metadata_filters.append(lng_filter)
 
-                metadata_filters.append(time_filter)
+        timestamp = time_to_timestamp(current_time)
+        time_filter = glm.MetadataFilter(
+            key="chunk.custom_metadata.timestamp",
+            conditions=[
+                glm.Condition(
+                    numeric_value=(timestamp-time_range*60),
+                    operation=glm.Condition.Operator.GREATER_EQUAL
+                )
+            ]
+        )
+
+        metadata_filters.append(time_filter)
         
-        # print(metadata_filters)
             
         return metadata_filters
 
 
     def query_corpus(self, filters: Dict[str, Dict], query: str):
-        # filter format
-        # {
-        #     location: {
-        #       lat:
-        #       lng:
-        #       dst:
-        #     },
-        #     timestamp: {
-        #       current_time:
-        #       range: 
-        #     }
-        # }
+        
         metadata_filters = self._generate_filters(filters)
         request = glm.QueryCorpusRequest(name=self.corpus_name,
                                         query=query,
@@ -214,28 +181,34 @@ if __name__ == "__main__":
     agent = CorpusAgent(document=DEV_DOC)
     # agent.delete_corpus()
     # agent.create_corpus()
-    # agent.create_document(display_name="test document 3", time="2024-10-16 09:46:00")
+    # agent.create_document(display_name="test document", time="2024-10-18 10:21:00")
     # filters = {}
     content = '''
-location: Taipei, Chung Hsiao east rd. 
-
-message:
-damn a traffic accident
+traffic accident! Aaah                   !
 '''
-    agent.add_info_to_document(content=content, lat=12.36, lng=112.65, time="2024-10-16 09:46:31")
-    filters = {
-        "location": {
-            "lat":12.36,
-            "lng":112.65,
-            "dst":5.0
-        },
-        "timestamp": {
-            "current_time": "2024-10-16 09:47:00",
-            "range": 60
-        }
-    }
-    # agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
-    agent.generate_answer(filters=None, query="Are there any traffic accidents?", answer_style="VERBOSE")
+    agent.add_info_to_document(content=content, lat=25.0329693, lng=121.5654177, time="2024-10-19 00:00:00")
+#     filters = {
+#         "location": {
+#             "lat":25.0329694,
+#             "lng":121.5654177,
+#             "dst":100.0
+#         },
+#         "timestamp": {
+#             "current_time": "2024-10-18 09:47:00",
+#             "range": 60
+#         }
+#     }
+
+#     query = '''
+# Instruction: Answer by summarizing reports, don't jump to conclusions
+# my location(latitude, longitude): (25.0329694, 121.5654177)
+# question: are there any traffic accidents nearby?
+# '''
+#     # agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
+#     try:
+#         agent.generate_answer(filters=None, query=query, answer_style="VERBOSE")
+#     except Exception as e:
+#         print(e)
     # get_document_request = glm.GetDocumentRequest(name="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx")
 
     # # Make the request

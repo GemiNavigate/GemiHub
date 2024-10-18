@@ -20,18 +20,6 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 DEV_DOC=os.getenv("TEST_DOCUMENT")
 
-def Hello():
-    '''
-    Says Hello in the right way
-    
-    Args:
-    
-    Returns:
-        desired response from greetings
-    '''
-    print("hello from function")
-    return
-
 def generate_ans_from_corpus(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
 
     corpus_agent = CorpusAgent(document=DEV_DOC)
@@ -42,8 +30,6 @@ def generate_ans_from_corpus(query: str, filters: Dict[str, Dict]) -> Dict[str, 
         "answerable_probability": answerable_prob
     }
 
-def generate_filter():
-    return None
 
 def generate_address(query: str):
     generation_config = {
