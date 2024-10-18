@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, Dimensions, Platform, PermissionsAndroid, TouchableOpacity, TextInput, Image, Animated, PanResponder } from 'react-native';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import { launchImageLibrary } from 'react-native-image-picker';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import GetLocation from 'react-native-get-location';
-import { useNavigation } from '@react-navigation/native';
+import { TokenContext, LocationContext } from './Context';
 
 const { width, height } = Dimensions.get('window');
 
@@ -102,18 +102,43 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         marginBottom: 5,
     },
+    tokenContainer: {
+        position: 'absolute',
+        top: 30, 
+        left: 10, 
+        padding: 10,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        elevation: 5,
+    },
+    tokenText: {
+        color: '#001427',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginRight: 5,
+    },
+    tokenIcon: {
+        marginRight: 5,
+    },
 });
 
 export default function ShareScreen({}) {
     const mapRef = useRef(null);
     const [permissionGranter, setPermissionGranter] = useState();
     const [postText, setPostText] = useState(''); 
-    const [currentLocation, setCurrentLocation] = useState(null);
+    const { currentLocation, setCurrentLocation } = useContext(LocationContext);
     const [selectedImage, setSelectedImage] = useState(null);
     const [userPosts, setUserPosts] = useState([]); // To store the user posts
     const slideAnim = useRef(new Animated.Value(0)).current;
-    const navigation = useNavigation();
     const [isInputExpanded, setIsInputExpanded] = useState(false);
+    const { tokens, setTokens } = useContext(TokenContext);
+    
+    // add coins
+    const increaseTokens = () => {
+        setTokens(tokens + 10); 
+    };
 
     const handleSubmit = () => {
         if (postText.trim() || selectedImage) {
@@ -141,6 +166,7 @@ export default function ShareScreen({}) {
               };
 
             setUserPosts([...userPosts, newPost]);
+            increaseTokens();
 
             // Reset fields
             setPostText('');
@@ -220,19 +246,27 @@ export default function ShareScreen({}) {
             2000,
         );
     }
-    useEffect(() => {
-        if (currentLocation) {
-            handleNavigateToAsk();
-        }
-    }, [currentLocation]);
 
-    const handleNavigateToAsk = () => {
-        if (currentLocation) {
-            navigation.navigate('Ask', { currentLocation });
-        } else {
-            alert('Current location is not available. Please try again later.');
-        }
+    const handleFocus = () => {
+        // 當聚焦時，上移動畫
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+            setIsInputExpanded(isInputExpanded); // Update the expansion state
+        });
     };
+    
+    const handleBlur = () => {
+        // 當失焦時，返回原位
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+    };
+    
     /* animation */
     const toggleInputContainer = () => {
         Animated.timing(slideAnim, {
@@ -302,8 +336,7 @@ export default function ShareScreen({}) {
                     />
                 )}
             </MapView>
-        
-
+            
             {/* Input Box for Posting */}
             {/* <View style={styles.inputContainer}>
                 <TextInput
@@ -345,6 +378,8 @@ export default function ShareScreen({}) {
                     value={postText}
                     onChangeText={setPostText}
                     multiline
+                    onFocus={handleFocus} // 當輸入框獲得焦點時
+                    // onBlur={handleBlur}   // 當輸入框失去焦點時
                 />
                 {selectedImage && (
                     <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
@@ -369,6 +404,12 @@ export default function ShareScreen({}) {
                 }}>
                 <MaterialCommunityIcons name="map-marker" size={24} color="#001427" />
             </TouchableOpacity>
+
+            <View style={styles.tokenContainer}>
+                <MaterialCommunityIcons name="currency-usd" size={24} color="#001427" style={styles.tokenIcon} />
+                <Text style={styles.tokenText}>{tokens}</Text>
+            </View>
+
         </View>
     );
 }
