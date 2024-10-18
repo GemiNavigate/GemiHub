@@ -136,7 +136,7 @@ class CorpusAgent:
         return metadata_filters
 
 
-    def query_corpus(self, filters: Dict[str, Dict], query: str):
+    def query_corpus(self, filters: Dict[str, Union[str, float]], query: str):
         
         metadata_filters = self._generate_filters(filters)
         request = glm.QueryCorpusRequest(name=self.corpus_name,
@@ -152,7 +152,7 @@ class CorpusAgent:
     
 
 
-    def generate_answer(self, filters: Dict[str, Dict], query: str, answer_style: str):
+    def generate_answer(self, filters: Dict[str, Union[str, float]], query: str, answer_style: str):
         query_content = glm.Content(parts=[glm.Part(text=query)])
         if filters == None:
             retriever_config = glm.SemanticRetrieverConfig(
