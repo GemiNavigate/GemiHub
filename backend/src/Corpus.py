@@ -10,6 +10,7 @@ from geopy.point import Point
 load_dotenv()
 SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE")
 CORPUS_NAME=os.getenv("CORPUS_NAME")
+DEV_DOC = os.getenv("TEST_DOCUMENT")
 credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE)
 scoped_credentials = credentials.with_scopes(
     ['https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/generative-language.retriever'])
@@ -45,7 +46,7 @@ class CorpusAgent:
     retriever = retriever_service_client
     generator = generative_service_client
 
-    def __init__(self, document, corpus_name=CORPUS_NAME, model_name="models/aqa", ):
+    def __init__(self, document = None, corpus_name=CORPUS_NAME, model_name="models/aqa", ):
         self.corpus_name = corpus_name
         self.model_name = model_name
         self.current_document = document
@@ -81,6 +82,7 @@ class CorpusAgent:
 
         create_document_request = glm.CreateDocumentRequest(parent=self.corpus_name, document=document)
         create_document_response = self.retriever.create_document(create_document_request)
+        self.current_document = create_document_response.name
         print(create_document_response)
 
         return create_document_response.name
@@ -202,26 +204,32 @@ class CorpusAgent:
     
 
 if __name__ == "__main__":
-    agent = CorpusAgent(document="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx")
+    agent = CorpusAgent(document=DEV_DOC)
     # agent.delete_corpus()
     # agent.create_corpus()
     # agent.create_document(display_name="test document 3", time="2024-10-16 09:46:00")
     # filters = {}
-    # agent.add_info_to_document(content="I saw a traffic accident", lat=12.36, lng=112.65, time="2024-10-16 09:46:31")
-    # filters = {
-    #     "location": {
-    #         "lat":12.36,
-    #         "lng":112.65,
-    #         "dst":5.0
-    #     },
-    #     "timestamp": {
-    #         "current_time": "2024-10-16 09:47:00",
-    #         "range": 60
-    #     }
-    # }
-    # # agent.query_corpus(filters=filters, query="Is the first chunk still in the document?")
-    # agent.generate_answer(filters=filters, query="Are there any traffic accidents?", answer_style="VERBOSE")
-    # get_document_request = glm.GetDocumentRequest(name="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-1-krzt9f21eiah")
+    content = '''
+location: Hsinchu, Guangfu rd.
+
+message:
+a traffic accident! Scary!
+'''
+    agent.add_info_to_document(content=content, lat=12.36, lng=112.65, time="2024-10-16 09:46:31")
+    filters = {
+        "location": {
+            "lat":12.36,
+            "lng":112.65,
+            "dst":5.0
+        },
+        "timestamp": {
+            "current_time": "2024-10-16 09:47:00",
+            "range": 60
+        }
+    }
+    agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
+    agent.generate_answer(filters=filters, query="Are there any traffic accidents?", answer_style="VERBOSE")
+    # get_document_request = glm.GetDocumentRequest(name="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx")
 
     # # Make the request
     # # document_resource_name is a variable set in the "Create a document" section.
@@ -229,4 +237,10 @@ if __name__ == "__main__":
 
     # # Print the response
     # print(get_document_response)
-    
+    # get_corpus_request = glm.GetCorpusRequest(name=CORPUS_NAME)
+
+    # # Make the request
+    # get_corpus_response = retriever_service_client.get_corpus(get_corpus_request)
+
+    # # Print the response
+    # print(get_corpus_response)
