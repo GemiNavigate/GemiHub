@@ -17,8 +17,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE")
 CORPUS_NAME=os.getenv("CORPUS_NAME")
 
-
-
 class ChatHandler():
     def __init__(self):
         corpus_document = "corpora/gemihubcorpus-r9d1gxqgkfzp/documents/test-document-3-ihj5ponxjay"
@@ -106,10 +104,9 @@ class ChatHandler():
         print(json_dump)
         print("type of json dump", type(json_dump))
         json_dump = json.loads(json_dump)
-        self.validate_response(json_dump)
-        
-        return json_data
-       
+        answer = self.validate_response(json_dump)
+        return answer
+    
     def validate_response(self, response: Dict):
         # call gen_answer
         print("type of response", type(response))
@@ -120,32 +117,43 @@ class ChatHandler():
             current_time = datetime.now()
             if filter["timestamp"]["current_time"] == "current_time":
                filter["timestamp"]["current_time"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
-            else:
+            elif filter["timestamp"]["current_time"][0] == '-':  # before ...  
                 minute = current_time.minute
                 current_time = current_time.replace(minute=(minute + int(filter["timestamp"]["current_time"])) % 60)
+                filter["timestamp"]["current_time"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                hour, minute = map(int, filter["timestamp"]["current_time"].split(":"))
+                print("hour:", hour)
+                print("minute:", minute)
+                current_time = current_time.replace(hour=hour, minute=minute, second=0, microsecond=0)
                 filter["timestamp"]["current_time"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
             print("this is filter")
             filter = json.dumps(filter, indent=4)
             print(filter)
             filter = json.loads(filter)
             text = response["text"]
-            answer = self.gen_answer(filter, text)
+            try:
+                answer = self.gen_answer(filter, text)
+            except Exception as e:
+                answer = "Things you requested are not exit."
             print("answer = ", answer)
-        # return text
+            
         else:
             text = response["text"]
             print("answer = ", answer)
-            
+        return answer
+
+
     def gen_answer(self, filters: Dict[str, Dict], query: str) -> Dict:
         response = self.corpus.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
         return response
-     
-        
+
+
 if __name__ == "__main__":
     chat_handler = ChatHandler()
     # request = "is it raining in Chiao Tung University 30 min before?"
     # request = "hello, what is your name"
-    request = "Is there any traffic accident in ?"
+    request = "Is there any traffic accident in Taipei at 5 a.m.?"
     print("echo request:", request)
     session = chat_handler.create_chat_session()
     response = chat_handler.get_response(session, request)
