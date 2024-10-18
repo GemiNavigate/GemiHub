@@ -114,8 +114,13 @@ class ChatHandler():
             filter = response["filter"]
             if self.map_handler.get_coor(response["place"]) != None:
                 filter["location"]["lat"], filter["location"]["lng"] = self.map_handler.get_coor(response["place"])
+            current_time = datetime.now()
             if filter["timestamp"]["current_time"] == "current_time":
-                filter["timestamp"]["current_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+               filter["timestamp"]["current_time"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                minute = current_time.minute
+                current_time = current_time.replace(minute=(minute + int(filter["timestamp"]["current_time"])) % 60)
+                filter["timestamp"]["current_time"] = current_time.strftime("%Y-%m-%d %H:%M:%S")
             print("this is filter")
             filter = json.dumps(filter, indent=4)
             print(filter)
@@ -130,7 +135,7 @@ class ChatHandler():
         
 if __name__ == "__main__":
     chat_handler = ChatHandler()
-    request = "is it raining in Chiao Tung University 15 minute ago?"
+    request = "is it raining in Chiao Tung University 5 minute ago?"
     # request = "hello, what is your name"
     session = chat_handler.create_chat_session()
     response = chat_handler.get_response(session, request)
