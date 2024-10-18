@@ -99,8 +99,8 @@ class ChatHandler():
             validate(instance=json_data, schema=self.filter_format)
         except Exception as e:
             print("invalid json format", e)
-        print(response)
-        self.validate_response(response)
+        # print(response)
+        # self.validate_response(response)
         
         
         return response    
