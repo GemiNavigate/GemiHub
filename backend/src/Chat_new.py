@@ -14,6 +14,7 @@ SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE")
 CORPUS_NAME=os.getenv("CORPUS_NAME")
 
 
+
 class ChatHandler():
     def __init__(self):
         corpus_document = "corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx"
@@ -74,36 +75,22 @@ class ChatHandler():
                 "required": ["filter", "query"],
             }
         }
-        no_function_call = {
-            "name": "no_function_call",
-            "description": "generate the response on your own",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "text": {
-                        "type": "string",
-                        "description": f"use user send message to the letter",
-                    },
-                },
-                "required": ["text"],
-            }
-        }
         
-        self.tool = [response_tool, no_function_call]
+        tool = [response_tool]
         # tool = [self.gen_answer]
         self.model = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
             generation_config=generation_config,
-            tools=self.tool,
+            tools=tool,
             system_instruction=f'''
             when receiving a request, check the following things step by step,
             1. if user is asking about things happening around a place, 
-                then call function in tools "gen_response" and generate required parameter.
+                then call function "gen_response" and generate required parameter.
                 - to specify the meaning of "things" in "things happening around a place":
                     for example, raining, crowds, emergencies.
                 - when calling gen_response, if needed arguments are missing, tell me what your already know and ask for information
-                    1. make sure filter is passed to function with type Dict[str, Dict], the format is {self.filter_format}
-                    2. make sure query is passed to function with type str, fill this column use the text sent from the user to the letter.
+                1. make sure filter is passed to function with type Dict[str, Dict], the format is {self.filter_format}
+                2. make sure query is passed to function with type str, fill this column use the text sent from the user to the letter.
             2. else, return a json object, call function "no_function_call", 
                 pass the arg text, which is the response generated on your own based on user request.
             '''
@@ -113,7 +100,9 @@ class ChatHandler():
               
     def create_chat_session(self):
         # start a new session and return session id 
-        chat_session = self.model.start_chat(history=[])
+        chat_session = self.model.start_chat(
+            history=[]
+        )
         session_id = str(uuid.uuid4())
         self.chat_sessions[session_id] = chat_session
         
@@ -131,8 +120,7 @@ class ChatHandler():
         
         return response
     
-    def gen_answer(self, filters: Dict[str, Dict], query: str) -> Dict:
-        self.corpus.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
+    
         
     def call_func_in_response(self, response):
         for part in response.parts:
