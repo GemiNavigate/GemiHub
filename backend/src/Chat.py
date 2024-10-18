@@ -57,7 +57,10 @@ class ChatHandler():
                     2. text: return a string which is the text sent from the user to the letter.
                     3. filter: this require a json format, make sure you follow the provided format: {self.filter_format}.
                         - mind that dst in this format is float, which means the distance around that place the user want, 
-                            if user doesn't specify, use 5.0 instead.
+                            if user doesn't specify, there are 3 situations, and first list out whether the place is a city, a town or else:
+                                1. if the place is a city -> use 100
+                                2. if the place is a town -> use 25
+                                3. else -> use 5
                         - and  current_time in this format str, if user specify the time in the request, use that time.
                             if the time the user give is not accurate time, change it into int. for example: 5 minute ago -> -5
                             else, fill this column with "current_time"
@@ -142,7 +145,7 @@ if __name__ == "__main__":
     chat_handler = ChatHandler()
     # request = "is it raining in Chiao Tung University 30 min before?"
     # request = "hello, what is your name"
-    request = "Is there any traffic accident in Taipei?"
+    request = "Is there any traffic accident in ?"
     print("echo request:", request)
     session = chat_handler.create_chat_session()
     response = chat_handler.get_response(session, request)
