@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import os
 from typing import Optional, List, Dict
 from Corpus import CorpusAgent
-from google.protobuf.json_format import MessageToDict
 import json
 from google.ai.generativelanguage_v1beta.types import content
 
@@ -84,14 +83,15 @@ class ChatAgent():
             text = item.chunk.data.string_value
             metadata = item.chunk.custom_metadata
             lat = metadata[0].numeric_value
-            lgt = metadata[1].numeric_value
+            lng = metadata[1].numeric_value
             timestamp = metadata[2].numeric_value
             
-            context += f"context {i}:\nlocation: ({lat}, {lgt})\ninformation: {text.lstrip()}\n"
+            query += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
             i += 1
             ref = {
+                "info": text, 
                 "lat": lat,
-                "lgt": lgt,
+                "lng": lng,
                 "time": timestamp,
             }
             reference.append(ref)

@@ -1,5 +1,4 @@
 import google.generativeai as genai
-import google.ai.generativelanguage as glm
 from google.oauth2 import service_account
 from dotenv import load_dotenv
 from Corpus import CorpusAgent
@@ -11,16 +10,19 @@ from datetime import datetime
 import os
 from typing import Optional, List, Dict
 from Corpus import CorpusAgent
+import json
 from google.ai.generativelanguage_v1beta.types import content
 
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
-
 DEV_DOC=os.getenv("TEST_DOCUMENT")
 
 def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
     corpus_agent = CorpusAgent(document=DEV_DOC)
+    # answer, answerable_prob = corpus_agent.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
+    # print("in gen ans from")
+    # print(answer)
     response = corpus_agent.query_corpus(filters, query)
     print("\n\nresponse from corpus")
     context = ""
@@ -30,14 +32,15 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         text = item.chunk.data.string_value
         metadata = item.chunk.custom_metadata
         lat = metadata[0].numeric_value
-        lgt = metadata[1].numeric_value
+        lng = metadata[1].numeric_value
         timestamp = metadata[2].numeric_value
         
-        context += f"context {i}:\nlocation: ({lat}, {lgt})\ninformation: {text.lstrip()}\n"
+        context += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
         i += 1
         ref = {
+            "info": text, 
             "lat": lat,
-            "lgt": lgt,
+            "lng": lng,
             "time": timestamp,
         }
         reference.append(ref)
@@ -50,6 +53,7 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
     #     print(item)
     print(reference)
     return context, reference
+        
 
 def parse_response(response):
     answer = ""
@@ -72,7 +76,7 @@ class ChatAgent():
         self.model = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
             generation_config = {
-                "temperature": 1,
+                "temperature": 0.3,
                 "top_p": 0.95,
                 "top_k": 64,
                 "max_output_tokens": 8192,
@@ -94,7 +98,8 @@ If recent or realtime information is needed call the corpus agent for crowd sour
 After context is given,  which is composed of crowd sourced information, answer based on the following steps:
 1. If the question involves degree of distance, such as 'nearby', 'close', 'within walking distance', evaluate the distance by estimating the distance between the two coordinates.
 2. anwswer based on the contexts
-Let's think step by step.
+IMPORTANT: do not call function after context is provided.!!!
+
 Otherwise answer freely.
 '''
         )
@@ -106,18 +111,20 @@ Otherwise answer freely.
     
     def chat(self, message, filters, current_lat, current_lng):
         chat = self.model.start_chat()
-        response = chat.send_message(message)
-
-        answer = parse_response(response)
-        if answer == "query_corpus":
-            query = f'''
+        query = f'''
 my location: ({current_lat},{current_lng})
 question: {message} 
 '''
-            print("query: ")
-            print(query)
+        print("query: ")
+        print(query)
+        response = chat.send_message(query)
+
+        answer = parse_response(response)
+        if answer == "query_corpus":
             context, reference = generate_context(query=query, filters=filters)
             response2 = chat.send_message(context)
+            print(response2)
+            print(chat.history)
             answer2 = parse_response(response2)
             return answer2, reference
 
@@ -139,4 +146,4 @@ if __name__=="__main__":
         "time_range": 60
     }
     # agent.start_chat()
-    agent.chat(message="Are there any dangerous events?", filters=filters, current_lat=25.09871, current_lng=121.9876)
+    agent.chat(message="Are there any dangerous events nearby?", filters=filters, current_lat=25.09871, current_lng=121.9876)
