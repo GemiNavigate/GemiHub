@@ -84,7 +84,7 @@ class ChatAgent():
             text = item.chunk.data.string_value
             metadata = item.chunk.custom_metadata
             lat = metadata[0].numeric_value
-            lgt = metadata[1].numeric_value
+            lng = metadata[1].numeric_value
             timestamp = metadata[2].numeric_value
             
             query += f"context {i}:\nlocation: ({lat}, {lgt})\ninformation: {text.lstrip()}\n"
@@ -92,7 +92,7 @@ class ChatAgent():
             ref = {
                 "info": text, 
                 "lat": lat,
-                "lgt": lgt,
+                "lng": lng,
                 "time": timestamp,
             }
             reference.append(ref)
