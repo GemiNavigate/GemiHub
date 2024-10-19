@@ -41,6 +41,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginBottom: 10,
         textAlignVertical: 'top', // Make it multiline
+        color: 'black'
     },
     imagePreview: {
         width: '100%',
@@ -197,7 +198,7 @@ export default function ShareScreen({}) {
             setCurrentLocation(currentCoordinate);
             moveToLocation(currentCoordinate.latitude, currentCoordinate.longitude);
         } catch (error) {
-            console.warn('Error getting current location:', error.message);
+            // console.warn('Error getting current location:', error.message);
         }
     };
 
@@ -246,7 +247,7 @@ export default function ShareScreen({}) {
         setTokens(tokens + 10); 
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async() => {
         if (postText.trim() || selectedImage) {
             // get time
             const timestamp = new Date().toISOString();
@@ -261,22 +262,42 @@ export default function ShareScreen({}) {
             // TODO: 後端獲取資料: JSON.stringify(newPost)
             const dataToSend = {
                 content: postText.trim(),
-                image: selectedImage,
                 metadata: {
-                    location:{
-                      latitude: currentLocation.latitude,
-                      longitude: currentLocation.longitude,
-                    },
+                    lat: currentLocation.latitude,
+                    lng: currentLocation.longitude,
                     time: timestamp,  // Current time
                 }
               };
-
             setUserPosts(newPost);
             increaseTokens();
 
             // Reset fields
             setPostText('');
             setSelectedImage(null);
+            
+            // Send data to the backend
+            try {
+                // Send data to FastAPI using fetch
+                const response = await fetch('https://mchackathon.benson0402.com/api/share', {
+                    method: 'POST',  // HTTP method
+                    headers: {
+                        'Content-Type': 'application/json',  
+                    },
+                    body: JSON.stringify(dataToSend),  
+                });
+                // console.log(JSON.stringify(dataToSend));
+                if (response.ok) {
+                    // Handle success (optional: handle the returned response)
+                    const responseData = await response.json();
+                    console.log('Success:', responseData);
+                } else {
+                    // Handle server errors
+                    console.error('Error:', response.status, response.statusText);
+                }
+            } catch (error) {
+                // Handle network or other errors
+                console.error('Network error:', error);
+            }    
         }
     };
 

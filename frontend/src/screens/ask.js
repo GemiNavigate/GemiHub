@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, FlatList, Platform, PermissionsAndroid, Animated, PanResponder } from 'react-native';
+import { Image, View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, FlatList, Platform, PermissionsAndroid, Animated, PanResponder } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
@@ -75,6 +75,30 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         marginRight: 10,
     },
+    ansContainer: {
+        position: 'absolute',
+        width: width * 0.9,
+        paddingHorizontal: 10,
+        backgroundColor: '#fafafa',
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        padding: 15,
+        alignItems: 'flex-start',
+        elevation: 5,
+    },
+    ansText: {
+        width: '100%',
+        // height: 100,
+        // borderColor: '#e0e0e0',
+        // borderWidth: 1,
+        backgroundColor: '#fafafa', //#faefd7
+        // borderRadius: 25,
+        paddingHorizontal: 15,
+        fontSize: 16,
+        marginBottom: 10,
+        textAlignVertical: 'top', // Make it multiline
+        color: 'black'
+    },
     tokenContainer: {
       position: 'absolute',
       top: 30, 
@@ -116,6 +140,28 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginLeft: 5,
     },
+    responseContainer: {
+        position: 'absolute',
+        bottom: 80,
+        left: 10,
+        right: 10,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        padding: 10,
+        borderRadius: 5,
+        maxHeight: 200,
+        width: width*0.9
+    },
+    responseItem: {
+        marginBottom: 10,
+    },
+    responseText: {
+        fontSize: 16,
+    },
+    logo: {
+        height: 40,
+        width: 40,
+        left: 0,
+    }
 });
 
 
@@ -129,7 +175,12 @@ export default function AskerScreen() {
   const { tokens, setTokens } = useContext(TokenContext);
   const [mapRegion, setMapRegion] = useState(null);
   const [cornerCoordinates, setCornerCoordinates] = useState(null);
-
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [answer, setAnswer] = useState(null);
+  const [references, setReferences] = useState([]);
+  /* animation */
+  const [fixedPosition, setFixedPosition] = useState(false);
+  const [position, setPosition] = useState(0);
 
   useEffect(() => {
       const checkPermissions = async () => {
@@ -203,26 +254,104 @@ export default function AskerScreen() {
   };
   
   // add coins
-  const increaseTokens = () => {
-      setTokens(tokens + 10); 
+  const decreaseTokens = () => {
+      setTokens(tokens - 10); 
   };
 
-  const handleSubmit = async () => {
-    try {
-        setIsLoading(true);
-        if (selectedLocation && question) {
-            console.log('Selected Location:', selectedLocation);
-            console.log('Question:', question);
-        } else {
-            alert('Please select a location and enter a question');
-        }
-    } catch (error) {
-        console.error('Error submitting:', error);
-        alert('An error occurred while submitting');
-    } finally {
-        setIsLoading(false);
-    }
+  // animation
+  const panResponder = useRef(
+    PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onPanResponderMove: (event, gestureState) => {
+            // 更新 slideAnim 值
+            slideAnim.setValue(gestureState.dy);
+        },
+        onPanResponderRelease: (event, gestureState) => {
+            if (gestureState.dy < -30) { // 向上滑动
+                slideAnim.setValue(0);
+            } else if (gestureState.dy > 30) { // 向下滑动
+                slideAnim.setValue(100);
+            } else {
+                // 否则返回原始位置
+                Animated.timing(slideAnim, {
+                    toValue: fixedPosition ? position : 0,
+                    duration: 200,
+                    useNativeDriver: true,
+                }).start();
+            }
+        },
+    })
+  ).current;
+
+  const formatDateTime = (dateTime) => {
+    const date = new Date(dateTime);
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始，所以加1
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
   };
+
+    const handleSubmit = async () => {
+        try {
+            setIsLoading(true);
+            // if(!selectedLocation){
+            //     const currentRegion = {
+            //         latitude: currentLocation.latitude,
+            //         longitude: currentLocation.longitude,
+            //         latitudeDelta: 0.01,
+            //         longitudeDelta: 0.01,
+            //     };
+            //     setSelectedLocation(currentRegion);
+            // }
+            if (selectedLocation || question) {
+                console.log('Selected Location:', selectedLocation);
+                console.log('Content:', question);
+
+                const currentTime = new Date().toISOString();
+                
+                const dataToSend = {
+                    content: question.trim(),
+                    cur_lat: currentLocation.latitude,
+                    cur_lng: currentLocation.longitude,
+                    filter: {
+                        min_lat: mapRegion.latitude - mapRegion.latitudeDelta / 2,
+                        max_lat: mapRegion.latitude + mapRegion.latitudeDelta / 2,
+                        min_lng: mapRegion.longitude - mapRegion.longitudeDelta / 2,
+                        max_lng: mapRegion.longitude + mapRegion.longitudeDelta / 2,
+                        cur_time: currentTime,
+                        time_range: 60
+                    },
+                };
+                console.log(JSON.stringify(dataToSend));
+                const response = await fetch("https://mchackathon.benson0402.com/api/ask", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dataToSend),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const responseData = await response.json();
+                setAnswer(responseData.response);
+                setReferences(responseData.references);
+                decreaseTokens();
+                setIsLoading(false);
+                setQuestion('');
+            } else {
+                alert('請選擇一個位置並輸入問題');
+                setIsLoading(false);
+            }
+        } catch (error) {
+            console.error('提交時發生錯誤:', error);
+            alert('提交時發生錯誤');
+            setIsLoading(false);
+        }
+    };
 
   const onRegionChangeComplete = (region) => {
     setMapRegion(region);
@@ -262,7 +391,7 @@ export default function AskerScreen() {
               }}
               onRegionChangeComplete={onRegionChangeComplete}
             >
-              
+              {/* current location marker  */}
               {currentLocation && (
                   <Marker
                       coordinate={currentLocation}
@@ -270,6 +399,19 @@ export default function AskerScreen() {
                       description="You are here"
                   />
               )}
+              {/* multiple reference marker  */}
+              {references.map((ref, index) => (
+                    <Marker
+                    key={index} // Add a unique key for each marker
+                    coordinate={{
+                        latitude: ref.lat,
+                        longitude: ref.lng,
+                    }}
+                    title={ref.info}
+                    description={formatDateTime(ref.time)}
+                    pinColor="#F4D58D"
+                    />
+              ))}
           </MapView>
           
           {/* Input Box for Posting */}
@@ -362,7 +504,7 @@ export default function AskerScreen() {
             </View>
           </View>
 
-          {cornerCoordinates && (
+          {/* {cornerCoordinates && (
                 <View style={styles.coordinatesContainer}>
                     <Text style={styles.coordinatesText}>
                         NE: {cornerCoordinates.northEast.latitude.toFixed(6)}, {cornerCoordinates.northEast.longitude.toFixed(6)}
@@ -377,17 +519,26 @@ export default function AskerScreen() {
                         SE: {cornerCoordinates.northEast.latitude.toFixed(6)}, {cornerCoordinates.southWest.longitude.toFixed(6)}
                     </Text>
                 </View>
-            )}
-          {/* Move to Current Location Button */}
-          {/* <TouchableOpacity
-              style={styles.buttonContainer}
-              onPress={() => {
-                  if (currentLocation) {
-                      moveToLocation(currentLocation.latitude, currentLocation.longitude);
-                  }
-              }}>
-              <MaterialCommunityIcons name="map-marker" size={24} color="#001427" />
-          </TouchableOpacity> */}
+            )} */}
+
+          {answer && (
+                // <View style={styles.ansContainer}>
+                //     {/* <View style={styles.responseItem}> */}
+                //         <Image source={require('../assets/gemini.png')} style={styles.logo} />
+                //         <Text style={styles.ansText}>這是測試測測試測試測測試測試</Text>
+                //     {/* </View> */}
+                // </View>
+                <Animated.View
+                style={[styles.ansContainer, { transform: [{ translateY: slideAnim }] }]}
+                {...panResponder.panHandlers} // Add the PanResponder handlers
+                >
+                    <Image source={require('../assets/gemini.png')} style={styles.logo} />
+                    {/* <Text style={styles.ansText}>{answer}</Text> */}
+                    <Text style={styles.ansText}>{answer}</Text>
+                </Animated.View>
+           )}
+
+
       </View>
   );
 }

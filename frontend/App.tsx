@@ -1,5 +1,5 @@
 import React, {useContext} from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -14,6 +14,7 @@ function CustomHeader() {
   return (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>GemiHub</Text>
+      {/* <Image source={require('./src/assets/logo.png')} style={{ width: 100, height: 100 }} /> */}
       <View style={styles.tokenContainer}>
         <MaterialCommunityIcons name="currency-usd" size={24} color="#001427" style={styles.tokenIcon} />
         <Text style={styles.tokenText}>{tokens}</Text>
@@ -73,12 +74,11 @@ const styles = StyleSheet.create({
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4, 
   },
   headerTitle: {
     color: '#F4D58D',
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   tokenContainer: {
     position: 'absolute',
