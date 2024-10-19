@@ -170,12 +170,19 @@ class CorpusAgent:
                                         semantic_retriever=retriever_config,
                                         answer_style=answer_style)
         print("req success")
-        response = generative_service_client.generate_answer(req)
-        print("corpus response: ")
+        try:
+            response = generative_service_client.generate_answer(req)
+            print(response.answer.content.parts[0].text)
+            print(response.answerable_probability)
+            return response.answer.content.parts[0].text, response.answerable_probability
+        except Exception as e:
+            print("error occured when retrieving informatinos from corpus", e)
+        
+        response = "I'm so sorry that the agent has no ability to answer your question."
+        probability = -1
+        return response, probability
         # print(type(response.answer.content.parts[0].text))
-        print(response.answer.content.parts[0].text)
-        print(response.answerable_probability)
-        return response.answer.content.parts[0].text, response.answerable_probability
+        
     
 
 if __name__ == "__main__":

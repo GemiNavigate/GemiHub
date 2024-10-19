@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from Corpus import CorpusAgent
+from chat import ChatAgent
 
 app = FastAPI()
 

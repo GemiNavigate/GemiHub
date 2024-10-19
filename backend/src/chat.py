@@ -39,7 +39,10 @@ class ChatAgent():
         metadata_filters = request["filter"]
         query = request["query"]
         corpus_agent_response = self.generate_ans_from_corpus(query=query, filters=metadata_filters)
-        final_response = chat.send_message(f"\ncorpus agent response: {corpus_agent_response}")
+        if corpus_agent_response["answerable_probability"] > 0:
+            final_response = chat.send_message(f"\ncorpus agent response: {corpus_agent_response}")
+        else:
+            final_response = corpus_agent_response["answer"]
         print("\nfinal response:")
         print(final_response)
         return final_response
@@ -47,7 +50,6 @@ class ChatAgent():
     def generate_ans_from_corpus(self, query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         corpus_agent = CorpusAgent(document=DEV_DOC)
         answer, answerable_prob = corpus_agent.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
-        
         return {
             "answer": answer,
             "answerable_probability": answerable_prob
@@ -55,7 +57,7 @@ class ChatAgent():
 
 if __name__=="__main__":
     request = {
-        "query": "Is there any traffic accidents?",
+        "query": "Hi! Good morning, which you have a good day~",
         "filter": {
             "min_lat": 25.0,
             "max_lat": 26.0,
