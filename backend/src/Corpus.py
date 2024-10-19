@@ -147,8 +147,8 @@ class CorpusAgent:
         if query_corpus_response == None:
             print("no response")
         
-        print(query_corpus_response)
-        return query_corpus_response
+        print(query_corpus_response.relevant_chunks)
+        return query_corpus_response.relevant_chunks
     
 
 
@@ -169,6 +169,7 @@ class CorpusAgent:
                                         contents=[query_content],
                                         semantic_retriever=retriever_config,
                                         answer_style=answer_style)
+<<<<<<< HEAD
         print("req success")
         try:
             response = generative_service_client.generate_answer(req)
@@ -186,6 +187,20 @@ class CorpusAgent:
         return response, probability
         # print(type(response.answer.content.parts[0].text))
         
+=======
+        response = generative_service_client.generate_answer(req)
+        print("corpus response: ")
+        print(response)
+        response_text = ""
+        # print(type(response.answer.content.parts[0].text))
+        for part in response.answer.content.parts:
+            response_text += part.text
+        
+        print(response_text)
+        print(response.answer.grounding_attributions)
+        print(response.answerable_probability)
+        return response_text, response.answerable_probability
+>>>>>>> origin/Kent
     
 
 if __name__ == "__main__":
@@ -195,9 +210,14 @@ if __name__ == "__main__":
     # agent.create_document(display_name="test document", time="2024-10-18 10:21:00")
     # filters = {}
     content = '''
-traffic accident! Aaah                   !
+location: 
+    latitude: 28.0329694
+    longitude: 121.5654178
+
+message:
+    A cat is here!
 '''
-    # agent.add_info_to_document(content=content, lat=25.0329693, lng=121.5654177, time="2024-10-19 00:00:00")
+    agent.add_info_to_document(content=content, lat=28.0329693, lng=121.565418, time="2024-10-19 00:00:00")
     filters = {
         "min_lat":24.0,
         "max_lat":30.0,
@@ -208,13 +228,22 @@ traffic accident! Aaah                   !
     }
 
     query = '''
+Instructions:
+The corpus is consisted of crowd souced information, answer by summarizing the reports of events or opinions.
+Don't show the messages in the corpus in your response. If there are multiple reports close together there's a high probability the event actually occurred.
+Let's think step by step.
+
+Info:
+my location: 
+
+Question:
 are there any traffic accidents nearby?
 '''
-    agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
-    try:
-        agent.generate_answer(filters=None, query=query, answer_style="VERBOSE")
-    except Exception as e:
-        print(e)
+    agent.query_corpus(filters=filters, query=query)
+    # try:
+    #     agent.generate_answer(filters=None, query=query, answer_style="ABSTRACTIVE")
+    # except Exception as e:
+    #     print(e)
     # get_document_request = glm.GetDocumentRequest(name="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx")
 
     # # Make the request
