@@ -7,7 +7,7 @@ import json
 from jsonschema import validate
 import uuid
 import os
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 from Corpus import CorpusAgent
 import json
 
@@ -17,7 +17,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 DEV_DOC=os.getenv("TEST_DOCUMENT")
 
-def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
+def generate_context(query: str, filters: Dict[str, Union[str, float]]) -> Dict[str, float]:
     corpus_agent = CorpusAgent(document=DEV_DOC)
     # answer, answerable_prob = corpus_agent.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
     # print("in gen ans from")
@@ -32,7 +32,12 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         lat = metadata[0].numeric_value
         lng = metadata[1].numeric_value
         timestamp = metadata[2].numeric_value
-        
+
+        # if not (lat <= filters["max_lat"] and lat >= filters["min_lat"] and lng <= filters["max_lng"] and lat >= filters["min_lng"]):
+        #     print(f"{filters['max_lat']} {lat} {filters['min_lat']}")
+        #     print(f"{filters['max_lng']} {lng} {filters['min_lng']}\n\n")
+        #     continue     
+
         context += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
         i += 1
         ref = {
@@ -43,9 +48,9 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         }
         reference.append(ref)
         # print(text)
-    # for i, item in enumerate(reference, 1):
-    #     item = json.dumps(item, indent=4)
-    #     print(item)
+    for i, item in enumerate(reference, 1):
+        item = json.dumps(item, indent=4)
+        print(item)
     return context, reference
         
 def answer_on_your_own(answer:str):
@@ -153,35 +158,35 @@ if __name__=="__main__":
     agent = ChatAgent()
 
     filters = {
-        "min_lat": -90,
-        "max_lat": 90,
-        "min_lng": -180,
-        "max_lng": 180,
-        "cur_time": "2024-10-19 12:09:57",
-        "time_range": 10
+        "min_lat": 24.788461663075736, 
+        "max_lat": 24.788972796634337,
+        "min_lng": 120.99550571888568,
+        "max_lng": 120.99611117716735,
+        "cur_time": "2024-10-20 12:00:00",
+        "time_range": 60
     }
     # agent.start_chat()
-    agent.chat(message="tell me how many people here", filters=filters, current_lat=-90, current_lng=180)
+    agent.chat(message="Are there dangerous events?", filters=filters, current_lat=24.788665553818, current_lng=120.99564522194252)
 
 
-    '''
-    {
-      "content": "tell me how many people here",
-      "cur_lat": -90,
-      "cur_lng": -180,
-      "filter": {
-        "min_lat": -90,
-        "max_lat": 90,
-        "min_lng": -180,
-        "max_lng": 180,
-        "cur_time": "2024-10-19T12:09:57.034Z",
-        "time_range": 10
-      }
-    }
-    '''
+    # '''
+    # {
+    #   "content": "tell me how many people here",
+    #   "cur_lat": -90,
+    #   "cur_lng": -180,
+    #   "filter": {
+    #     "min_lat": -90,
+    #     "max_lat": 90,
+    #     "min_lng": -180,
+    #     "max_lng": 180,
+    #     "cur_time": "2024-10-19T12:09:57.034Z",
+    #     "time_range": 10
+    #   }
+    # }
+    # '''
 
-    print(DEV_DOC)
-    corpus_agent = CorpusAgent(document=DEV_DOC)
+    # print(DEV_DOC)
+    # corpus_agent = CorpusAgent(document=DEV_DOC)
     
-    content = '''location: (30.0988, 121.98765) Information: Whoa a traffic accident! Send Help! '''
-    corpus_agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
+    # content = '''location: (30.0988, 121.98765) Information: Whoa a traffic accident! Send Help! '''
+    # corpus_agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
