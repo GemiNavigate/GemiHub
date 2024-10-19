@@ -6,7 +6,6 @@ from Corpus import CorpusAgent
 from typing import Dict
 import json
 from jsonschema import validate
-from mapAPI import MapHandler
 import uuid
 from datetime import datetime
 import os
@@ -20,6 +19,27 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 DEV_DOC=os.getenv("TEST_DOCUMENT")
 
+def generate_context_Ann(self, query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
+    corpus_agent = CorpusAgent(document=DEV_DOC)
+    # answer, answerable_prob = corpus_agent.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
+    # print("in gen ans from")
+    # print(answer)
+    response = corpus_agent.query_corpus(filters, query)
+    print("\n\nresponse from corpus")
+    query = ""
+    i = 0
+    for item in response:
+        text = item.chunk.data.string_value
+        metadata = item.chunk.custom_metadata
+        lat = metadata[0].numeric_value
+        lng = metadata[1].numeric_value
+        # timestamp = metadata[2].numeric_value
+        query += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
+        i += 1
+        # print(text)
+    print("\n\nquery:")
+    print(query)
+    return query
 
 def generate_context(query: str, filters):
     context, references = None, None
@@ -88,10 +108,10 @@ Otherwise answer freely.
 my location: ({current_lat},{current_lng})
 question: {message} 
 '''
-            context, references = generate_context(query=query)
+            context, reference = generate_context(query=query)
             response2 = self.chat.send_message(context)
             answer2 = parse_response(response2, filters, current_lat, current_lng)
-            return answer2, references
+            return answer2, reference
 
         print(answer)
         return answer, None
@@ -111,4 +131,4 @@ if __name__=="__main__":
         "time_range": 60
     }
     agent.start_chat()
-    agent.chat("Are there any dangerous events?", filters=filters)
+    agent.chat(message="Are there any dangerous events?", filters=filters, current_lat=25.09871, current_lng=121.9876)
