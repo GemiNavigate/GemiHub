@@ -74,6 +74,7 @@ async def ask(ask_request: AskRequest) -> AskResponse:
     try:
         ask_request.filter.cur_time = ask_request.filter.cur_time.strftime("%Y-%m-%d %H:%M:%S")
         agent = ChatAgent()
+        print("ask:, ", ask_request.content)
         answer, references = agent.chat(
             message=ask_request.content,
             filters=ask_request.filter.dict(),
@@ -108,6 +109,7 @@ async def share(share_request: ShareRequest) -> ShareResponse:
         load_dotenv()
         DEV_DOC=os.getenv("TEST_DOCUMENT")
         agent = CorpusAgent(document=DEV_DOC)
+        print("share: ", share_request.content)
         agent.add_info_to_document(
             content=share_request.content, 
             lat=share_request.metadata.lat, 

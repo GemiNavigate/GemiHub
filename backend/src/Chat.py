@@ -19,9 +19,6 @@ DEV_DOC=os.getenv("TEST_DOCUMENT")
 
 def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
     corpus_agent = CorpusAgent(document=DEV_DOC)
-    # answer, answerable_prob = corpus_agent.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
-    # print("in gen ans from")
-    # print(answer)
     response = corpus_agent.query_corpus(filters, query)
     context = ""
     reference = []
@@ -42,10 +39,6 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
             "time": timestamp,
         }
         reference.append(ref)
-        # print(text)
-    # for i, item in enumerate(reference, 1):
-    #     item = json.dumps(item, indent=4)
-    #     print(item)
     return context, reference
         
 def answer_on_your_own(answer:str):
@@ -67,10 +60,18 @@ def parse_response(response):
             answer += part.text
     return answer
 
+def load_system_instruction(file_path: str) -> str:
+    try:
+        with open(file_path, 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        raise FileNotFoundError(f"System instruction file not found: {file_path}")
+
 
 class ChatAgent():
     def __init__(self):
         # chat = None,
+        instruction = load_system_instruction("system_instruction_ask_filter.txt")
         self.model = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
             generation_config = {
@@ -97,31 +98,10 @@ class ChatAgent():
                 answer_on_your_own
             ],
             tool_config={'function_calling_config':'ANY'},
-            system_instruction='''
-            You are a model with two answer mode.
-            1. answer on your own
-            2. query Corpus
-            Based on "question" in the user request, If recent or realtime information is needed call the corpus agent for crowd sourced information.
-            otherwise, just call function "answer_on_your_own" and answer the question on your own, pass it as a args
-            - mind the example of realtime info: traffic, wether, store 
-            After context is given,  which is composed of crowd sourced information, answer based on the following steps:
-            1. If the question involves degree of distance, such as 'nearby', 'close', 'within walking distance', evaluate the distance by estimating the distance between the two coordinates.
-            2. anwswer based on the contexts, and answer in detail about the proportion of different reports.
-            3. If there are no relevant information regarding the question, simply respond there are no matching information.
-
-            IMPORTANT: 
-            Tell me the credibility of your conclusion based on proportion and amount of different opinions about this subject.
-
-            Otherwise answer freely.
-            '''
+            system_instruction=instruction,
         )
         return
     
-    
-    
-    # def start_chat(self):
-    #     if self.chat ==None:
-    #         self.chat = self.model.start_chat()
     
     def chat(self, message, filters, current_lat, current_lng):
         chat = self.model.start_chat()
