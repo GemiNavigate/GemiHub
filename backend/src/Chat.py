@@ -86,6 +86,7 @@ class ChatHandler():
         del self.chat_sessions[session_id]
         return f"seccussfully delete the session: {session_id}"
     
+<<<<<<< HEAD
     def get_response(self, session_id, text):
         # while recieving messages
         #  RAG from corpus
@@ -129,3 +130,66 @@ if __name__ == "__main__":
     session = chat_handler.create_chat_session()
     response = chat_handler.get_response(session, request)
     # print(response)
+=======
+    def chat(self, message, filters):
+        chat = self.model.start_chat()
+        response = chat.send_message(message)
+
+        for part in response.parts:
+            if fn := part.function_call:
+                args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
+                print(f"{fn.name}({args})")
+                if(fn.name == "generate_ans_from_corpus"):
+                    
+#                     address = generate_address(message)
+#                     if address == None:
+#                         query = message
+#                     else:
+#                         query = f'''
+# target location: {address}
+# message: {message} 
+#                         '''
+#                     print(query)
+                    corpus_agent_response = generate_ans_from_corpus(query=message, filters=filters)
+                    return corpus_agent_response
+            else:
+                print(part.text)
+                return part.text
+
+        final_response = chat.send_message(f"\ncorpus agent response: {corpus_agent_response}")
+        print("\nfinal response:")
+        print(final_response)
+        return final_response
+
+if __name__=="__main__":
+    generation_config = {
+        "temperature": 0.5,
+    }
+
+    agent = ChatAgent(
+        model_name="gemini-1.5-pro",
+        config=generation_config,
+        tools = [
+            genai.protos.Tool(
+                function_declarations = [
+                    genai.protos.FunctionDeclaration(
+                        name = "generate_ans_from_corpus",
+                        description = "Retrieves an answer using the corpus agent, which performs Retrieval Augmented Generation (RAG) to answer based on recent or realtime information."
+                    ),
+                ],
+            ),
+        ],
+        tool_config={'function_calling_config':'ANY'},
+    )
+
+    filters = {
+        "min_lat":24.0,
+        "max_lat":30.0,
+        "min_lng":115.0,
+        "max_lng":125.0,
+        "current_time": "2024-10-19 00:00:00",
+        "time_range": 60
+    }
+
+    agent.chat("Are there any dangerous events?", filters=filters)
+>>>>>>> Kent
