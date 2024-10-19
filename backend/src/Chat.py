@@ -90,6 +90,7 @@ class ChatAgent():
             query += f"context {i}:\nlocation: ({lat}, {lgt})\ninformation: {text.lstrip()}\n"
             i += 1
             ref = {
+                "info": text, 
                 "lat": lat,
                 "lgt": lgt,
                 "time": timestamp,
