@@ -5,7 +5,6 @@ import os
 from typing import Optional, List, Dict
 from Corpus import CorpusAgent
 import json
-from google.ai.generativelanguage_v1beta.types import content
 
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
