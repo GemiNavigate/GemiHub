@@ -19,33 +19,39 @@ genai.configure(api_key=GEMINI_API_KEY)
 
 DEV_DOC=os.getenv("TEST_DOCUMENT")
 
-def generate_context_Ann(self, query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
+def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
     corpus_agent = CorpusAgent(document=DEV_DOC)
-    # answer, answerable_prob = corpus_agent.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
-    # print("in gen ans from")
-    # print(answer)
     response = corpus_agent.query_corpus(filters, query)
     print("\n\nresponse from corpus")
-    query = ""
+    context = ""
+    reference = []
     i = 0
     for item in response:
         text = item.chunk.data.string_value
         metadata = item.chunk.custom_metadata
         lat = metadata[0].numeric_value
-        lng = metadata[1].numeric_value
-        # timestamp = metadata[2].numeric_value
-        query += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
+        lgt = metadata[1].numeric_value
+        timestamp = metadata[2].numeric_value
+        
+        context += f"context {i}:\nlocation: ({lat}, {lgt})\ninformation: {text.lstrip()}\n"
         i += 1
+        ref = {
+            "lat": lat,
+            "lgt": lgt,
+            "time": timestamp,
+        }
+        reference.append(ref)
         # print(text)
-    print("\n\nquery:")
-    print(query)
-    return query
+    print("\n\ncontext:")
+    print(context)
+    print("\n\nreference")
+    # for i, item in enumerate(reference, 1):
+    #     item = json.dumps(item, indent=4)
+    #     print(item)
+    print(reference)
+    return context, reference
 
-def generate_context(query: str, filters):
-    context, references = None, None
-    return context, references
-
-def parse_response(response, filters, current_lat, current_lng):
+def parse_response(response):
     answer = ""
     for part in response.parts:
         if fn := part.function_call:
@@ -62,8 +68,8 @@ def parse_response(response, filters, current_lat, current_lng):
 
 class ChatAgent():
     def __init__(self):
+        # chat = None,
         self.model = genai.GenerativeModel(
-            chat = None,
             model_name="gemini-1.5-pro",
             generation_config = {
                 "temperature": 1,
@@ -94,23 +100,25 @@ Otherwise answer freely.
         )
         return
     
-    def start_chat(self):
-        if self.chat ==None:
-            self.chat = self.model.start_chat()
+    # def start_chat(self):
+    #     if self.chat ==None:
+    #         self.chat = self.model.start_chat()
     
     def chat(self, message, filters, current_lat, current_lng):
-        
-        response = self.chat.send_message(message)
+        chat = self.model.start_chat()
+        response = chat.send_message(message)
 
-        answer = parse_response(response, filters, current_lat, current_lng)
+        answer = parse_response(response)
         if answer == "query_corpus":
             query = f'''
 my location: ({current_lat},{current_lng})
 question: {message} 
 '''
-            context, reference = generate_context(query=query)
-            response2 = self.chat.send_message(context)
-            answer2 = parse_response(response2, filters, current_lat, current_lng)
+            print("query: ")
+            print(query)
+            context, reference = generate_context(query=query, filters=filters)
+            response2 = chat.send_message(context)
+            answer2 = parse_response(response2)
             return answer2, reference
 
         print(answer)
@@ -130,5 +138,5 @@ if __name__=="__main__":
         "current_time": "2024-10-19 00:00:00",
         "time_range": 60
     }
-    agent.start_chat()
+    # agent.start_chat()
     agent.chat(message="Are there any dangerous events?", filters=filters, current_lat=25.09871, current_lng=121.9876)
