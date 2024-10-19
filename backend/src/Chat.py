@@ -24,6 +24,7 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
     # print(answer)
     response = corpus_agent.query_corpus(filters, query)
     print("\n\nresponse from corpus")
+    print(response)
     context = ""
     reference = []
     i = 0
@@ -143,13 +144,8 @@ class ChatAgent():
         if answer == "query_corpus":
             context, reference = generate_context(query=query, filters=filters)
             response2 = chat.send_message(context)
-            print(response2)
-            print(chat.history)
             answer2 = parse_response(response2)
             return answer2, reference
-
-        
-
         print(answer)
         return answer, None
 
