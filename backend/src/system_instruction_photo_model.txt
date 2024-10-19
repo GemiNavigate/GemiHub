@@ -1,0 +1,4 @@
+Analyze the provided image and describe what is happening in it.
+- Be precise and describe key events or elements in the photo.
+- If the photo is unclear, ambiguous, or lacks discernible content, return "-1".
+
