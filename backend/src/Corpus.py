@@ -184,42 +184,27 @@ class CorpusAgent:
     
 
 if __name__ == "__main__":
+    print(DEV_DOC)
     agent = CorpusAgent(document=DEV_DOC)
     # agent.delete_corpus()
     # agent.create_corpus()
-    # agent.create_document(display_name="test document", time="2024-10-18 10:21:00")
-    # filters = {}
-    content = '''
-location: 
-    latitude: 28.0329694
-    longitude: 121.5654178
-
-message:
-    A cat is here!
-'''
-    agent.add_info_to_document(content=content, lat=28.0329693, lng=121.565418, time="2024-10-19 00:00:00")
+    # agent.create_document(display_name="test document", time="2024-10-19 10:46:00")
+#     content = '''
+# location: (30.0988, 121.98765)
+# Information: Whoa a traffic accident! Send Help!
+# '''
+#     # agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
     filters = {
         "min_lat":24.0,
-        "max_lat":30.0,
+        "max_lat":31.0,
         "min_lng":115.0,
         "max_lng":125.0,
         "current_time": "2024-10-19 00:00:00",
         "time_range": 60
     }
 
-    query = '''
-Instructions:
-The corpus is consisted of crowd souced information, answer by summarizing the reports of events or opinions.
-Don't show the messages in the corpus in your response. If there are multiple reports close together there's a high probability the event actually occurred.
-Let's think step by step.
 
-Info:
-my location: 
-
-Question:
-are there any traffic accidents nearby?
-'''
-    agent.query_corpus(filters=filters, query=query)
+    agent.query_corpus(filters=filters, query="What is the color of spongebob's pants?")
     # try:
     #     agent.generate_answer(filters=None, query=query, answer_style="ABSTRACTIVE")
     # except Exception as e:
@@ -239,3 +224,6 @@ are there any traffic accidents nearby?
 
     # # Print the response
     # print(get_corpus_response)
+    # req = glm.DeleteDocumentRequest(name="corpora/gemihubcorpus-7vin6z0kps/documents/test-document-k9jy58yju3kq", force=True)
+    # delete_doc_response = retriever_service_client.delete_document(req)
+    # print(delete_doc_response)
