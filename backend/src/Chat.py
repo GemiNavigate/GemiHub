@@ -106,8 +106,11 @@ class ChatAgent():
             - mind the example of realtime info: traffic, wether, store 
             After context is given,  which is composed of crowd sourced information, answer based on the following steps:
             1. If the question involves degree of distance, such as 'nearby', 'close', 'within walking distance', evaluate the distance by estimating the distance between the two coordinates.
-            2. anwswer based on the contexts
-            IMPORTANT: do not call function after context is provided.!!!
+            2. anwswer based on the contexts, and answer in detail about the proportion of different reports.
+            3. If there are no relevant information regarding the question, simply respond there are no matching information.
+
+            IMPORTANT: 
+            Tell me the credibility of your conclusion based on proportion and amount of different opinions about this subject.
 
             Otherwise answer freely.
             '''
@@ -133,7 +136,11 @@ class ChatAgent():
             context, reference = generate_context(query=query, filters=filters)
             response2 = chat.send_message(context)
             answer2 = parse_response(response2)
-            return answer2, reference
+            print('\n')
+            
+            final_answer = f"Based on crowd sourced answer:\n {answer2} "
+            print(final_answer)
+            return final_answer, reference
 
         
 
