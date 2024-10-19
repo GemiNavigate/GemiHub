@@ -168,4 +168,4 @@ if __name__=="__main__":
         "time_range": 60
     }
     # agent.start_chat()
-    agent.chat(message="what is the color of the pants of sponge bob?", filters=filters, current_lat=25.09871, current_lng=121.9876)
+    agent.chat(message="is there dangerous accidents nearby?", filters=filters, current_lat=25.09871, current_lng=121.9876)
