@@ -74,7 +74,7 @@ async def ask(ask_request: AskRequest) -> AskResponse:
     try:
         ask_request.filter.cur_time = ask_request.filter.cur_time.strftime("%Y-%m-%d %H:%M:%S")
         agent = ChatAgent()
-        print("ask:, ", ask_request.content)
+        print("ask: ", ask_request.content)
         answer, references = agent.chat(
             message=ask_request.content,
             filters=ask_request.filter.dict(),
