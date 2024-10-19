@@ -32,20 +32,41 @@ class ChatAgent():
                 ),
             ],
             tool_config={'function_calling_config':'ANY'},
+            system_instruction='''
+                You are a chat agent that works together with a corpus agent, which performs RAG on a corpus consisting of crowd sourced information on recent or realtime events.
+                Call the corpus agent when the user asks for events or current status of their surrounding or a specific location, otherwise answer directly.
+                Make sure you have pending the user query word by word.
+                If no need to ask corpus, then just answer on your own.
+            '''
         )
+        # You need to decide whether the user is asking about the information about a place first.
+        #             - example about a question asking the infromation of a place: Is there any traffic accidents?
+        #             - example about a question NOT asking the information of a place: Have you have dinner?
+        #         If the user is asking about the information about a place, then call function "generate_ans_from_corpus".
+        #         else, answer directly.
         
     def chat(self, request: Dict[str, Dict]):
         chat = self.model.start_chat()
-        metadata_filters = request["filter"]
-        query = request["query"]
-        corpus_agent_response = self.generate_ans_from_corpus(query=query, filters=metadata_filters)
-        if corpus_agent_response["answerable_probability"] > 0:
-            final_response = chat.send_message(f"\ncorpus agent response: {corpus_agent_response}")
-        else:
-            final_response = corpus_agent_response["answer"]
-        print("\nfinal response:")
-        print(final_response)
-        return final_response
+        response = chat.send_message(request["query"])
+        
+        for part in response.parts:
+            if fn := part.function_call:
+                args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
+                print(f"{fn.name}({args})")
+                if(fn.name == "generate_ans_from_corpus"):
+                    metadata_filters = request["filter"]
+                    query = request["query"]
+                    corpus_agent_response = self.generate_ans_from_corpus(query=query, filters=metadata_filters)
+                    if corpus_agent_response["answerable_probability"] > 0:
+                        final_response = chat.send_message(f"\ncorpus agent response: {corpus_agent_response}")
+                    else:
+                        final_response = corpus_agent_response["answer"]
+                    print("\nfinal response:")
+                    print(final_response)
+                    return final_response
+            else:
+                print(part.txt)
+                return part.txt
 
     def generate_ans_from_corpus(self, query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         corpus_agent = CorpusAgent(document=DEV_DOC)
@@ -54,10 +75,10 @@ class ChatAgent():
             "answer": answer,
             "answerable_probability": answerable_prob
         }
-
+    
 if __name__=="__main__":
     request = {
-        "query": "Hi! Good morning, which you have a good day~",
+        "query": "Good morning!",
         "filter": {
             "min_lat": 25.0,
             "max_lat": 26.0,
