@@ -9,46 +9,40 @@ class Filter(BaseModel):
     max_lat: float = Field(..., ge=-90.0, le=90.0)
     min_lng: float = Field(..., ge=-180.0, le=180.0)
     max_lng: float = Field(..., ge=-180.0, le=180.0)
-    current_time: datetime
+    cur_time: datetime
     time_range: int = 60 # In minute
 
 
 class Reference(BaseModel):
-    messaege: str
+    info: str
     lat: float = Field(..., ge=-90.0, le=90.0)
     lng: float = Field(..., ge=-180.0, le=180.0)
     time: datetime
 
+class MetaData(BaseModel):
+    lat: float = Field(..., ge=-90.0, le=90.0)
+    lng: float = Field(..., ge=-180.0, le=180.0)
+    time: datetime
 
-class ClientShareData(BaseModel):
-    test: str
-
-
-class ServerShareData(BaseModel):
-    test: str
-
-
-class AskMessage(BaseModel):
-    query: str
+class AskRequest(BaseModel):
+    content: str
+    cur_lat: float = Field(..., ge=-90.0, le=90.0)
+    cur_lng: float = Field(..., ge=-180.0, le=180.0)
     filter: Filter
 
 
 class AskResponse(BaseModel):
     response: str
-    reference: List[Reference] = None
+    references: List[Reference] = None
 
 
-class ShareMessage(BaseModel):
+class ShareRequest(BaseModel):
     content: str
-    image: any
-    metadata: 
+    metadata: MetaData
 
 
 class ShareResponse(BaseModel):
-    tmp: str
-    # 
-
-    
+    status: str 
 
 
 ########## API ###########
@@ -60,12 +54,12 @@ async def root():
     return {"message": "OK"}
 
 @app.post("/ask")
-async def ask(ask_message: AskMessage) -> AskResponse:
+async def ask(ask_request: AskRequest) -> AskResponse:
     response = AskResponse(
         response="Hello",
-        reference=[
+        references=[
             Reference(
-                messaege="test",
+                info="test",
                 lat=25.0330,
                 lng=121.5654,
                 time="2024-10-19 10:05:44"
@@ -75,5 +69,8 @@ async def ask(ask_message: AskMessage) -> AskResponse:
     return response
 
 @app.post("/share")
-async def share(share_message: ShareMessage) -> ShareResponse:
-    return {"message":"OK"}
+async def share(share_request: ShareRequest) -> ShareResponse:
+    response = ShareResponse(
+        status="OK"
+    )
+    return response 
