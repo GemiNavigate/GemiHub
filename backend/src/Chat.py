@@ -5,7 +5,6 @@ import os
 from typing import Optional, List, Dict
 from Corpus import CorpusAgent
 import json
-from google.ai.generativelanguage_v1beta.types import content
 
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -102,7 +101,6 @@ class ChatAgent():
         for i, item in enumerate(reference, 1):
             item = json.dumps(item, indent=4)
             print(item)
-        print(reference)
         return query, reference
         
     
