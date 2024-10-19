@@ -78,19 +78,32 @@ class ChatAgent():
         response = corpus_agent.query_corpus(filters, query)
         print("\n\nresponse from corpus")
         query = ""
+        reference = []
         i = 0
         for item in response:
             text = item.chunk.data.string_value
             metadata = item.chunk.custom_metadata
             lat = metadata[0].numeric_value
-            lng = metadata[1].numeric_value
-            # timestamp = metadata[2].numeric_value
-            query += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
+            lgt = metadata[1].numeric_value
+            timestamp = metadata[2].numeric_value
+            
+            query += f"context {i}:\nlocation: ({lat}, {lgt})\ninformation: {text.lstrip()}\n"
             i += 1
+            ref = {
+                "lat": lat,
+                "lgt": lgt,
+                "time": timestamp,
+            }
+            reference.append(ref)
             # print(text)
         print("\n\nquery:")
         print(query)
-        return query
+        print("\n\nreference")
+        for i, item in enumerate(reference, 1):
+            item = json.dumps(item, indent=4)
+            print(item)
+        print(reference)
+        return query, reference
         
     
 if __name__=="__main__":
