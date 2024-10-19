@@ -1,5 +1,4 @@
 import google.generativeai as genai
-import google.ai.generativelanguage as glm
 from google.oauth2 import service_account
 from dotenv import load_dotenv
 from Corpus import CorpusAgent
@@ -8,179 +7,157 @@ import json
 from jsonschema import validate
 import uuid
 import os
+from typing import Optional, List, Dict
+from Corpus import CorpusAgent
+import json
 
 # set keys
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE")
-CORPUS_NAME=os.getenv("CORPUS_NAME")
+genai.configure(api_key=GEMINI_API_KEY)
+DEV_DOC=os.getenv("TEST_DOCUMENT")
+
+def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
+    corpus_agent = CorpusAgent(document=DEV_DOC)
+    # answer, answerable_prob = corpus_agent.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
+    # print("in gen ans from")
+    # print(answer)
+    response = corpus_agent.query_corpus(filters, query)
+    print("\n\nresponse from corpus")
+    context = ""
+    reference = []
+    i = 0
+    for item in response:
+        text = item.chunk.data.string_value
+        metadata = item.chunk.custom_metadata
+        lat = metadata[0].numeric_value
+        lng = metadata[1].numeric_value
+        timestamp = metadata[2].numeric_value
+        
+        context += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
+        i += 1
+        ref = {
+            "info": text, 
+            "lat": lat,
+            "lng": lng,
+            "time": timestamp,
+        }
+        reference.append(ref)
+        # print(text)
+    print("\n\ncontext:")
+    print(context)
+    print("\n\nreference")
+    # for i, item in enumerate(reference, 1):
+    #     item = json.dumps(item, indent=4)
+    #     print(item)
+    print(reference)
+    return context, reference
+        
+def answer_on_your_own(answer:str):
+    return answer
+
+def parse_response(response):
+    answer = ""
+    print(response.parts)
+    for part in response.parts:
+        if fn := part.function_call:
+            args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
+            print(f"{fn.name}({args})")
+            if(fn.name == "query_corpus"):
+                return "query_corpus"
+            elif(fn.name == "answer_on_your_own"):
+                for key, val in fn.args.items():
+                    if key == "answer":
+                        answer = val
+                return answer
+        else:
+            print(part.text)
+            answer += part.text
+    print(answer)
+    return answer
 
 
-
-class ChatHandler():
+class ChatAgent():
     def __init__(self):
-        corpus_document = "corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx"
-        self.corpus = CorpusAgent(document=corpus_document)
-        genai.configure(api_key=GEMINI_API_KEY)
-        generation_config = {
-            "temperature": 0.5,
-            # "top_p": 0.95,
-            # "top_k": 64,
-            # "max_output_tokens": 8192,
-            # "response_mime_type": "text/plain",
-        }
-        
-        self.filter_format = {
-            "location": {
-                "dst": {
-                    "type": "float",
-                    "description": '''destination around that place the user want, 
-                                    if user doesn't specify, use 5.0 instead.'''
-                }
-            },
-            "timestamp": {
-                "current_time": {
-                    "type": "str",
-                    "description": '''if user specify the time in the request, use that time.
-                                    else, fill this column with "current_time"'''
-                        },
-                "range": 60
-            }
-        }
-        # but if the time user specify is not in the interval [current_time-60min, current_time],
-        # fill this column with "invalid_time".
-                                    
-        
+        # chat = None,
         self.model = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
-            generation_config=generation_config,
-            system_instruction=f'''
-            when receiving a request, check the following things step by step,
-            1. if user is asking about things happening around a place,
-                - contain three arguments in your response.parts
-                    1. use_function_call: just fill this column with True
-                    2. text: return a string which is the text sent from the user to the letter.
-                    3. filter: this require a json format, make sure you follow the provided format: {self.filter_format}
-                    4. place: the place where user want information. if user doesn't specify the place, fill this column with "current_place"
-                - to specify the meaning of "things" in "things happening around a place":
-                    for example, raining, crowds, emergencies.
-            2. else, contain two arguments in your response.parts,
-                1. use_function_call: False
-                2. text: response generated on your own based on user request.
+            generation_config = {
+                "temperature": 0.0,
+                "top_p": 0.95,
+                "top_k": 64,
+                "max_output_tokens": 8192,
+                "response_mime_type": "text/plain",
+            },
+            tools=[
+                genai.protos.Tool(
+                    function_declarations = [
+                        genai.protos.FunctionDeclaration(
+                        name = "query_corpus",
+                        description = "Retrieves relevant recent or realtime information about the query",
+                        ),
+                        # genai.protos.FunctionDeclaration(
+                        # name = "answer_on_your_own",
+                        # description = "answer question on your own",
+                        
+                        # ),
+                    ],
+                ),
+                answer_on_your_own
+            ],
+            tool_config={'function_calling_config':'ANY'},
+            system_instruction='''
+            You are a model with two answer mode.
+            1. answer on your own
+            2. query Corpus
+            Based on "question" in the user request, If recent or realtime information is needed call the corpus agent for crowd sourced information.
+            otherwise, just call function "answer_on_your_own" and answer the question on your own, pass it as a args
+            - mind the example of realtime info: traffic, wether, store 
+            After context is given,  which is composed of crowd sourced information, answer based on the following steps:
+            1. If the question involves degree of distance, such as 'nearby', 'close', 'within walking distance', evaluate the distance by estimating the distance between the two coordinates.
+            2. anwswer based on the contexts
+            IMPORTANT: do not call function after context is provided.!!!
+
+            Otherwise answer freely.
             '''
         )
-        
-        self.chat_sessions = {}
-              
-    def create_chat_session(self):
-        # start a new session and return session id 
-        chat_session = self.model.start_chat(
-            history=[]
-        )
-        session_id = str(uuid.uuid4())
-        self.chat_sessions[session_id] = chat_session
-        
-        return session_id
-
-    def delete_chat_session(self, session_id):
-        del self.chat_sessions[session_id]
-        return f"seccussfully delete the session: {session_id}"
+        return
     
-<<<<<<< HEAD
-    def get_response(self, session_id, text):
-        # while recieving messages
-        #  RAG from corpus
-        chat_session = self.chat_sessions[session_id]
-        response = chat_session.send_message(text)
-        
-        # convert response into json format
-        response = response.text.strip("```json\n").rstrip(' ').rstrip('`')
-        json_data = json.loads(response)
-        try:
-            validate(instance=json_data, schema=self.filter_format)
-        except Exception as e:
-            print("invalid json format", e)
-        # print(response)
-        # self.validate_response(response)
-        
-        
-        return response    
-
-       
-    def validate_response(self, response: json):
-        # call gen_answer
-        if response["use_function_call"] == "True":
-            filter = response
-            filter["location"]["lat"] = 0
-            filter["location"]["lng"] = 0
-            
-        # return text 
-        else:
-            text = response["text"]
-            
     
-    def gen_answer(self, filters: Dict[str, Dict], query: str) -> Dict:
-        self.corpus.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
-     
-        
-if __name__ == "__main__":
-    chat_handler = ChatHandler()
-    request = "is it raining in Chaung Tung University at 4 p.m.?"
-    # request = "hello, what is your name?"
-    session = chat_handler.create_chat_session()
-    response = chat_handler.get_response(session, request)
-    # print(response)
-=======
-    def chat(self, message, filters):
+    
+    # def start_chat(self):
+    #     if self.chat ==None:
+    #         self.chat = self.model.start_chat()
+    
+    def chat(self, message, filters, current_lat, current_lng):
         chat = self.model.start_chat()
-        response = chat.send_message(message)
+        query = f'''
+        my location: ({current_lat},{current_lng})
+        question: {message} 
+        '''
+        print("query: ")
+        print(query)
+        response = chat.send_message(query)
 
-        for part in response.parts:
-            if fn := part.function_call:
-                args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
-                print(f"{fn.name}({args})")
-                if(fn.name == "generate_ans_from_corpus"):
-                    
-#                     address = generate_address(message)
-#                     if address == None:
-#                         query = message
-#                     else:
-#                         query = f'''
-# target location: {address}
-# message: {message} 
-#                         '''
-#                     print(query)
-                    corpus_agent_response = generate_ans_from_corpus(query=message, filters=filters)
-                    return corpus_agent_response
-            else:
-                print(part.text)
-                return part.text
+        answer = parse_response(response)
+        if answer == "query_corpus":
+            context, reference = generate_context(query=query, filters=filters)
+            response2 = chat.send_message(context)
+            print(response2)
+            print(chat.history)
+            answer2 = parse_response(response2)
+            return answer2, reference
 
-        final_response = chat.send_message(f"\ncorpus agent response: {corpus_agent_response}")
-        print("\nfinal response:")
-        print(final_response)
-        return final_response
+        
+
+        print(answer)
+        return answer, None
+
+        
 
 if __name__=="__main__":
-    generation_config = {
-        "temperature": 0.5,
-    }
 
-    agent = ChatAgent(
-        model_name="gemini-1.5-pro",
-        config=generation_config,
-        tools = [
-            genai.protos.Tool(
-                function_declarations = [
-                    genai.protos.FunctionDeclaration(
-                        name = "generate_ans_from_corpus",
-                        description = "Retrieves an answer using the corpus agent, which performs Retrieval Augmented Generation (RAG) to answer based on recent or realtime information."
-                    ),
-                ],
-            ),
-        ],
-        tool_config={'function_calling_config':'ANY'},
-    )
+    agent = ChatAgent()
 
     filters = {
         "min_lat":24.0,
@@ -190,6 +167,5 @@ if __name__=="__main__":
         "current_time": "2024-10-19 00:00:00",
         "time_range": 60
     }
-
-    agent.chat("Are there any dangerous events?", filters=filters)
->>>>>>> Kent
+    # agent.start_chat()
+    agent.chat(message="Are there dangerous acitivity nearby?", filters=filters, current_lat=25.09871, current_lng=121.9876)

@@ -147,8 +147,8 @@ class CorpusAgent:
         if query_corpus_response == None:
             print("no response")
         
-        print(query_corpus_response)
-        return query_corpus_response
+        # print(query_corpus_response.relevant_chunks)
+        return query_corpus_response.relevant_chunks
     
 
 
@@ -170,56 +170,52 @@ class CorpusAgent:
                                         semantic_retriever=retriever_config,
                                         answer_style=answer_style)
         print("req success")
-        response = generative_service_client.generate_answer(req)
-        print("corpus response: ")
-        response_text = ""
-        # print(type(response.answer.content.parts[0].text))
-        for part in response.answer.content.parts:
-            response_text += part.text
+        try:
+            response = generative_service_client.generate_answer(req)
+            print("original response from corpus")
+            print(response)
+            print("end!!!\n\n")
+            response_text = ""
+            # print(type(response.answer.content.parts[0].text))
+            for part in response.answer.content.parts:
+                response_text += part.text
+
+            return response_text, response.answerable_probability
+        except Exception as e:
+            print("error occured when retrieving informatinos from corpus", e)
+            response = "I'm so sorry, there are no infromations about the question."
+            probability = -1
+            return response, probability
+    
         
-        print(response_text)
-        print(response.answerable_probability)
-        return response_text, response.answerable_probability
     
 
 if __name__ == "__main__":
+    print(DEV_DOC)
     agent = CorpusAgent(document=DEV_DOC)
     # agent.delete_corpus()
     # agent.create_corpus()
-    # agent.create_document(display_name="test document", time="2024-10-18 10:21:00")
-    # filters = {}
-    content = '''
-location: 
-    latitude: 25.0329693
-    longitude: 121.5654177
-
-message:
-    A traffic accident is here!
-'''
-    # agent.add_info_to_document(content=content, lat=25.0329693, lng=121.5654177, time="2024-10-19 00:00:00")
+    # agent.create_document(display_name="test document", time="2024-10-19 10:46:00")
+#     content = '''
+# location: (30.0988, 121.98765)
+# Information: Whoa a traffic accident! Send Help!
+# '''
+#     # agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
     filters = {
         "min_lat":24.0,
-        "max_lat":30.0,
+        "max_lat":31.0,
         "min_lng":115.0,
         "max_lng":125.0,
         "current_time": "2024-10-19 00:00:00",
         "time_range": 60
     }
 
-    query = '''
-Instructions:
-The corpus is consisted of crowd souced information, answer by summarizing the reports of events or opinions.
-Don't show the messages in the corpus in your response. If there are multiple reports close together there's a high probability the event actually occurred.
-Let's think step by step.
 
-message:
-are there any traffic accidents nearby?
-'''
-    # agent.query_corpus(filters=filters, query=query)
-    try:
-        agent.generate_answer(filters=None, query=query, answer_style="ABSTRACTIVE")
-    except Exception as e:
-        print(e)
+    agent.query_corpus(filters=filters, query="What is the color of spongebob's pants?")
+    # try:
+    #     agent.generate_answer(filters=None, query=query, answer_style="ABSTRACTIVE")
+    # except Exception as e:
+    #     print(e)
     # get_document_request = glm.GetDocumentRequest(name="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx")
 
     # # Make the request
@@ -235,3 +231,6 @@ are there any traffic accidents nearby?
 
     # # Print the response
     # print(get_corpus_response)
+    # req = glm.DeleteDocumentRequest(name="corpora/gemihubcorpus-7vin6z0kps/documents/test-document-k9jy58yju3kq", force=True)
+    # delete_doc_response = retriever_service_client.delete_document(req)
+    # print(delete_doc_response)

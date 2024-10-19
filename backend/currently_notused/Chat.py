@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 import os
 from typing import Optional, List, Dict
-from Corpus import CorpusAgent
+from ..src.Corpus import CorpusAgent
 from google.ai.generativelanguage_v1beta.types import content
 
 load_dotenv()
