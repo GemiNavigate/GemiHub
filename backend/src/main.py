@@ -20,6 +20,14 @@ class Reference(BaseModel):
     time: datetime
 
 
+class ClientShareData(BaseModel):
+    test: str
+
+
+class ServerShareData(BaseModel):
+    test: str
+
+
 class AskMessage(BaseModel):
     query: str
     filter: Filter
@@ -27,31 +35,45 @@ class AskMessage(BaseModel):
 
 class AskResponse(BaseModel):
     response: str
-    reference: List[Reference]
+    reference: List[Reference] = None
 
 
 class ShareMessage(BaseModel):
-    tmp: str
-    #  
+    content: str
+    image: any
+    metadata: 
 
 
 class ShareResponse(BaseModel):
     tmp: str
     # 
 
+    
+
 
 ########## API ###########
 
-app = FastAPI()
+app = FastAPI(root_path="/api")
 
 @app.get("/")
 async def root():
     return {"message": "OK"}
 
 @app.post("/ask")
-async def ask(ask_message: AskMessage):
-    return {"message":"OK"}
+async def ask(ask_message: AskMessage) -> AskResponse:
+    response = AskResponse(
+        response="Hello",
+        reference=[
+            Reference(
+                messaege="test",
+                lat=25.0330,
+                lng=121.5654,
+                time="2024-10-19 10:05:44"
+            )
+        ]
+    )
+    return response
 
 @app.post("/share")
-async def share(share_message: ShareMessage):
+async def share(share_message: ShareMessage) -> ShareResponse:
     return {"message":"OK"}

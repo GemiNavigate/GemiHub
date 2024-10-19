@@ -215,7 +215,7 @@ Let's think step by step.
 message:
 are there any traffic accidents nearby?
 '''
-    agent.query_corpus(filters=filters, query=query)
+    # agent.query_corpus(filters=filters, query=query)
     try:
         agent.generate_answer(filters=None, query=query, answer_style="ABSTRACTIVE")
     except Exception as e:
