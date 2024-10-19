@@ -47,61 +47,54 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         # print(text)
     print("\n\ncontext:")
     print(context)
-    print("\n\nreference")
-    # for i, item in enumerate(reference, 1):
-    #     item = json.dumps(item, indent=4)
-    #     print(item)
-    print(reference)
+    # print("\n\nreference")
+    # # for i, item in enumerate(reference, 1):
+    # #     item = json.dumps(item, indent=4)
+    # #     print(item)
+    # print(reference)
     return context, reference
         
 
 def parse_response(response):
     answer = ""
     for part in response.parts:
-        if fn := part.function_call:
-            args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
-            print(f"{fn.name}({args})")
-            if(fn.name == "query_corpus"):
-                return "query_corpus"
-        else:
-            print(part.text)
-            answer += part.text
+        # if fn := part.function_call:
+        #     args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
+        #     print(f"{fn.name}({args})")
+        #     if(fn.name == "query_corpus"):
+        #         return "query_corpus"
+        
+        answer += part.text
     print(answer)
     return answer
 
 
 class ChatAgent():
-    def __init__(self):
+    def __init__(self, generation_config):
         # chat = None,
         self.model = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
-            generation_config = {
-                "temperature": 0.3,
-                "top_p": 0.95,
-                "top_k": 64,
-                "max_output_tokens": 8192,
-                "response_mime_type": "text/plain",
-            },
-            tools=[
-                genai.protos.Tool(
-                    function_declarations = [
-                        genai.protos.FunctionDeclaration(
-                        name = "query_corpus",
-                        description = "Retrieves relevant recent or realtime information about the query",
-                        ),
-                    ],
-                ),
-            ],
-            tool_config={'function_calling_config':'ANY'},
+            generation_config = generation_config,
             system_instruction='''
-If recent or realtime information is needed call the corpus agent for crowd sourced information
+If recent or realtime information is needed , respond with "call" with no other characters 
 After context is given,  which is composed of crowd sourced information, answer based on the following steps:
 1. If the question involves degree of distance, such as 'nearby', 'close', 'within walking distance', evaluate the distance by estimating the distance between the two coordinates.
-2. anwswer based on the contexts
-IMPORTANT: do not call function after context is provided.!!!
+2. anwswer based on the contexts, if the question can't be answered by the given context simply respond with No information about the sprecific topic.
+3. Don't give information that's irrelevant to the question.
 
 Otherwise answer freely.
-'''
+''',
+            # tools = [
+            #     genai.protos.Tool(
+            #         function_declarations = [
+            #             genai.protos.FunctionDeclaration(
+            #                 name = "query_corpus",
+            #                 description = "Retrieves relevant recent or realtime information about the query",
+            #             ),
+            #         ],
+            #     ),
+            # ],
+            # tool_config={'function_calling_config':'ANY'},
         )
         return
     
@@ -111,31 +104,33 @@ Otherwise answer freely.
     
     def chat(self, message, filters, current_lat, current_lng):
         chat = self.model.start_chat()
-        query = f'''
-my location: ({current_lat},{current_lng})
-question: {message} 
-'''
+        query = f"my location: ({current_lat},{current_lng})\nquestion: {message}" 
         print("query: ")
         print(query)
         response = chat.send_message(query)
-
+        # print(response)
         answer = parse_response(response)
-        if answer == "query_corpus":
+        if answer == "call" or answer == "call\n" or answer == "call \n":
             context, reference = generate_context(query=query, filters=filters)
             response2 = chat.send_message(context)
-            print(response2)
-            print(chat.history)
+
             answer2 = parse_response(response2)
             return answer2, reference
 
-        print(answer)
         return answer, None
 
         
 
 if __name__=="__main__":
 
-    agent = ChatAgent()
+    
+    generation_config = {
+        "temperature": 0.3,
+        "top_p": 0.95,
+        "top_k": 64,
+        "max_output_tokens": 8192,
+        "response_mime_type": "text/plain",
+    }
 
     filters = {
         "min_lat":24.0,
@@ -146,4 +141,5 @@ if __name__=="__main__":
         "time_range": 60
     }
     # agent.start_chat()
-    agent.chat(message="Are there any dangerous events nearby?", filters=filters, current_lat=25.09871, current_lng=121.9876)
+    agent = ChatAgent(generation_config=generation_config)
+    agent.chat(message="What color is sponge bob's pants", filters=filters, current_lat=25.09871, current_lng=121.9876)
