@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, constr
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
 from dotenv import load_dotenv
 import os
@@ -12,13 +12,14 @@ from google.oauth2 import service_account
 from Corpus import CorpusAgent
 from Chat import ChatAgent
     
+
 class Filter(BaseModel):
     min_lat: float = Field(..., ge=-90.0, le=90.0)
     max_lat: float = Field(..., ge=-90.0, le=90.0)
     min_lng: float = Field(..., ge=-180.0, le=180.0)
     max_lng: float = Field(..., ge=-180.0, le=180.0)
     cur_time: datetime
-    time_range: int = 60 # In minute
+    time_range: int = 60  # In minutes
 
 
 class Reference(BaseModel):

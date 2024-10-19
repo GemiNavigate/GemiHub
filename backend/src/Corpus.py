@@ -85,9 +85,7 @@ class CorpusAgent:
         chunk.custom_metadata.append(glm.CustomMetadata(key="timestamp", numeric_value=timestamp))
 
         create_chunk_request = glm.CreateChunkRequest(parent=self.current_document, chunk=chunk)
-        print(create_chunk_request)
         response = self.retriever.create_chunk(create_chunk_request)
-        print(response)
         return
     
     def _generate_filters(self, filters: Dict[str, Union[str, float]]):
