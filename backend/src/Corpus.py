@@ -147,7 +147,7 @@ class CorpusAgent:
         if query_corpus_response == None:
             print("no response")
         
-        print(query_corpus_response.relevant_chunks)
+        # print(query_corpus_response.relevant_chunks)
         return query_corpus_response.relevant_chunks
     
 

@@ -27,7 +27,7 @@ class ChatAgent():
                 genai.protos.Tool(
                     function_declarations = [
                         genai.protos.FunctionDeclaration(
-                            name = "generate_ans_from_corpus",
+                            name = "generate_context",
                             description = "Retrieves an answer using the corpus agent, which performs Retrieval Augmented Generation (RAG) to answer based on recent or realtime information."
                         ),
                     ],
@@ -55,10 +55,10 @@ class ChatAgent():
             if fn := part.function_call:
                 args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
                 # print(f"{fn.name}({args})")
-                if(fn.name == "generate_ans_from_corpus"):
+                if(fn.name == "generate_context"):
                     metadata_filters = request["filter"]
                     query = request["query"]
-                    corpus_agent_response = self.generate_ans_from_corpus(query=query, filters=metadata_filters)
+                    corpus_agent_response = self.generate_context(query=query, filters=metadata_filters)
                     if corpus_agent_response["answerable_probability"] > 0:
                         final_response = chat.send_message(f"\ncorpus agent response: {corpus_agent_response}")
                     else:
@@ -77,21 +77,21 @@ class ChatAgent():
         # print(answer)
         response = corpus_agent.query_corpus(filters, query)
         print("\n\nresponse from corpus")
+        query = ""
+        i = 0
         for item in response:
-            print("item:")
-            print(item[0])
-        print("\n\nend\n\n")
-        print("type of response", type(response))
-        json_data = [MessageToDict(item) for item in response]
-        json_data = json.dumps(json_data)
-        print("\n\n json data")
-        print(json_data)
-        print("end of jons\n\n")
+            text = item.chunk.data.string_value
+            metadata = item.chunk.custom_metadata
+            lat = metadata[0].numeric_value
+            lng = metadata[1].numeric_value
+            # timestamp = metadata[2].numeric_value
+            query += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
+            i += 1
+            # print(text)
+        print("\n\nquery:")
+        print(query)
+        return query
         
-        # return {
-        #     "answer": answer,
-        #     "answerable_probability": answerable_prob
-        # }
     
 if __name__=="__main__":
     request = {
