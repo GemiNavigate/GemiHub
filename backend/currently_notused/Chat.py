@@ -10,8 +10,10 @@ from mapAPI import MapHandler
 import uuid
 from datetime import datetime
 import os
+from typing import Optional, List, Dict
+from Corpus import CorpusAgent
+from google.ai.generativelanguage_v1beta.types import content
 
-# set keys
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE")
