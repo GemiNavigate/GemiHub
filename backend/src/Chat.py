@@ -149,9 +149,10 @@ class ChatAgent():
             # print(chat.history)
             answer2 = parse_response(response2)
             print('\n')
-            print(answer2)
-
-            return answer2, reference
+            
+            final_answer = f"Based on crowd sourced answer:\n {answer2} "
+            print(final_answer)
+            return final_answer, reference
 
         
 
