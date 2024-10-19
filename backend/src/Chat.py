@@ -53,15 +53,23 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
     print(reference)
     return context, reference
         
+def answer_on_your_own(answer:str):
+    return answer
 
 def parse_response(response):
     answer = ""
+    print(response.parts)
     for part in response.parts:
         if fn := part.function_call:
             args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
             print(f"{fn.name}({args})")
             if(fn.name == "query_corpus"):
                 return "query_corpus"
+            elif(fn.name == "answer_on_your_own"):
+                for key, val in fn.args.items():
+                    if key == "answer":
+                        answer = val
+                return answer
         else:
             print(part.text)
             answer += part.text
@@ -75,7 +83,7 @@ class ChatAgent():
         self.model = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
             generation_config = {
-                "temperature": 0.3,
+                "temperature": 0.0,
                 "top_p": 0.95,
                 "top_k": 64,
                 "max_output_tokens": 8192,
@@ -88,21 +96,34 @@ class ChatAgent():
                         name = "query_corpus",
                         description = "Retrieves relevant recent or realtime information about the query",
                         ),
+                        # genai.protos.FunctionDeclaration(
+                        # name = "answer_on_your_own",
+                        # description = "answer question on your own",
+                        
+                        # ),
                     ],
                 ),
+                answer_on_your_own
             ],
             tool_config={'function_calling_config':'ANY'},
             system_instruction='''
-If recent or realtime information is needed call the corpus agent for crowd sourced information
-After context is given,  which is composed of crowd sourced information, answer based on the following steps:
-1. If the question involves degree of distance, such as 'nearby', 'close', 'within walking distance', evaluate the distance by estimating the distance between the two coordinates.
-2. anwswer based on the contexts
-IMPORTANT: do not call function after context is provided.!!!
+            You are a model with two answer mode.
+            1. answer on your own
+            2. query Corpus
+            Based on "question" in the user request, If recent or realtime information is needed call the corpus agent for crowd sourced information.
+            otherwise, just call function "answer_on_your_own" and answer the question on your own, pass it as a args
+            - mind the example of realtime info: traffic, wether, store 
+            After context is given,  which is composed of crowd sourced information, answer based on the following steps:
+            1. If the question involves degree of distance, such as 'nearby', 'close', 'within walking distance', evaluate the distance by estimating the distance between the two coordinates.
+            2. anwswer based on the contexts
+            IMPORTANT: do not call function after context is provided.!!!
 
-Otherwise answer freely.
-'''
+            Otherwise answer freely.
+            '''
         )
         return
+    
+    
     
     # def start_chat(self):
     #     if self.chat ==None:
@@ -127,6 +148,8 @@ Otherwise answer freely.
             answer2 = parse_response(response2)
             return answer2, reference
 
+        
+
         print(answer)
         return answer, None
 
@@ -145,4 +168,4 @@ if __name__=="__main__":
         "time_range": 60
     }
     # agent.start_chat()
-    agent.chat(message="Are there any dangerous events nearby?", filters=filters, current_lat=25.09871, current_lng=121.9876)
+    agent.chat(message="what is the color of the pants of sponge bob?", filters=filters, current_lat=25.09871, current_lng=121.9876)
