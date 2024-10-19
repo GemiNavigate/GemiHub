@@ -55,14 +55,14 @@ class ChatAgent():
 
 if __name__=="__main__":
     request = {
-        "query": "Are there any traffic accidents?",
+        "query": "Is there any traffic accidents?",
         "filter": {
             "min_lat": 25.0,
             "max_lat": 26.0,
             "min_lng": 121.0,
             "max_lng": 122.0,
             "current_time": "2024-10-18 20:30:00",
-            "time_range": 60,            
+            "time_range": 60,
         }
     }
     agent = ChatAgent()
