@@ -179,11 +179,7 @@ class CorpusAgent:
             # print(type(response.answer.content.parts[0].text))
             for part in response.answer.content.parts:
                 response_text += part.text
-            # print(response.answer.content.parts[0].text)
-            # print(response.answerable_probability)
-            # print(response_text)
-            # print(response.answer.grounding_attributions)
-            # print(response.answerable_probability)
+
             return response_text, response.answerable_probability
         except Exception as e:
             print("error occured when retrieving informatinos from corpus", e)
@@ -200,22 +196,22 @@ if __name__ == "__main__":
     # agent.delete_corpus()
     # agent.create_corpus()
     # agent.create_document(display_name="test document", time="2024-10-19 10:46:00")
-#     content = '''
-# location: (30.0988, 121.98765)
-# Information: Whoa a traffic accident! Send Help!
-# '''
-#     # agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
-    filters = {
-        "min_lat":24.0,
-        "max_lat":31.0,
-        "min_lng":115.0,
-        "max_lng":125.0,
-        "current_time": "2024-10-19 00:00:00",
-        "time_range": 60
-    }
+    content = '''
+location: (30.0988, 121.98765)
+Information: No accidents acutally happened
+'''
+    agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
+    # filters = {
+    #     "min_lat":24.0,
+    #     "max_lat":31.0,
+    #     "min_lng":115.0,
+    #     "max_lng":125.0,
+    #     "current_time": "2024-10-19 00:00:00",
+    #     "time_range": 60
+    # }
 
 
-    agent.query_corpus(filters=filters, query="What is the color of spongebob's pants?")
+    # agent.query_corpus(filters=filters, query="What is the color of spongebob's pants?")
     # try:
     #     agent.generate_answer(filters=None, query=query, answer_style="ABSTRACTIVE")
     # except Exception as e:
