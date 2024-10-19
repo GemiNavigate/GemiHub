@@ -169,38 +169,29 @@ class CorpusAgent:
                                         contents=[query_content],
                                         semantic_retriever=retriever_config,
                                         answer_style=answer_style)
-<<<<<<< HEAD
         print("req success")
         try:
             response = generative_service_client.generate_answer(req)
             print("original response from corpus")
             print(response)
             print("end!!!\n\n")
-            print(response.answer.content.parts[0].text)
-            print(response.answerable_probability)
-            return response.answer.content.parts[0].text, response.answerable_probability
+            response_text = ""
+            # print(type(response.answer.content.parts[0].text))
+            for part in response.answer.content.parts:
+                response_text += part.text
+            # print(response.answer.content.parts[0].text)
+            # print(response.answerable_probability)
+            # print(response_text)
+            # print(response.answer.grounding_attributions)
+            # print(response.answerable_probability)
+            return response_text, response.answerable_probability
         except Exception as e:
             print("error occured when retrieving informatinos from corpus", e)
+            response = "I'm so sorry, there are no infromations about the question."
+            probability = -1
+            return response, probability
+    
         
-        response = "I'm so sorry, there are no infromations about the question."
-        probability = -1
-        return response, probability
-        # print(type(response.answer.content.parts[0].text))
-        
-=======
-        response = generative_service_client.generate_answer(req)
-        print("corpus response: ")
-        print(response)
-        response_text = ""
-        # print(type(response.answer.content.parts[0].text))
-        for part in response.answer.content.parts:
-            response_text += part.text
-        
-        print(response_text)
-        print(response.answer.grounding_attributions)
-        print(response.answerable_probability)
-        return response_text, response.answerable_probability
->>>>>>> origin/Kent
     
 
 if __name__ == "__main__":
@@ -234,7 +225,7 @@ Don't show the messages in the corpus in your response. If there are multiple re
 Let's think step by step.
 
 Info:
-my location: 
+my location:
 
 Question:
 are there any traffic accidents nearby?

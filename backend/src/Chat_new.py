@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import os
 from typing import Optional, List, Dict
 from Corpus import CorpusAgent
+from google.protobuf.json_format import MessageToDict
+import json
 from google.ai.generativelanguage_v1beta.types import content
 
 load_dotenv()
@@ -52,7 +54,7 @@ class ChatAgent():
         for part in response.parts:
             if fn := part.function_call:
                 args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
-                print(f"{fn.name}({args})")
+                # print(f"{fn.name}({args})")
                 if(fn.name == "generate_ans_from_corpus"):
                     metadata_filters = request["filter"]
                     query = request["query"]
@@ -61,24 +63,39 @@ class ChatAgent():
                         final_response = chat.send_message(f"\ncorpus agent response: {corpus_agent_response}")
                     else:
                         final_response = corpus_agent_response["answer"]
-                    print("\nfinal response:")
-                    print(final_response)
+                    # print("\nfinal response:")
+                    # print(final_response)
                     return final_response
             else:
                 print(part.txt)
                 return part.txt
 
-    def generate_ans_from_corpus(self, query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
+    def generate_context(self, query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         corpus_agent = CorpusAgent(document=DEV_DOC)
-        answer, answerable_prob = corpus_agent.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
-        return {
-            "answer": answer,
-            "answerable_probability": answerable_prob
-        }
+        # answer, answerable_prob = corpus_agent.generate_answer(filters=filters, query=query, answer_style="VERBOSE")
+        # print("in gen ans from")
+        # print(answer)
+        response = corpus_agent.query_corpus(filters, query)
+        print("\n\nresponse from corpus")
+        for item in response:
+            print("item:")
+            print(item[0])
+        print("\n\nend\n\n")
+        print("type of response", type(response))
+        json_data = [MessageToDict(item) for item in response]
+        json_data = json.dumps(json_data)
+        print("\n\n json data")
+        print(json_data)
+        print("end of jons\n\n")
+        
+        # return {
+        #     "answer": answer,
+        #     "answerable_probability": answerable_prob
+        # }
     
 if __name__=="__main__":
     request = {
-        "query": "Good morning!",
+        "query": "Is there any traffic accident?",
         "filter": {
             "min_lat": 25.0,
             "max_lat": 26.0,
