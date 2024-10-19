@@ -18,11 +18,19 @@ generative_service_client = glm.GenerativeServiceClient(credentials=scoped_crede
 retriever_service_client = glm.RetrieverServiceClient(credentials=scoped_credentials)
 permission_service_client = glm.PermissionServiceClient(credentials=scoped_credentials)
 
+def time_to_timestamp(timestr: Union[str, datetime]) -> float:
+    if isinstance(timestr, datetime):
+        return timestr.timestamp()
+    elif isinstance(timestr, str):
+        time_format = "%Y-%m-%d %H:%M:%S"
+        try:
+            parsed_time = datetime.strptime(timestr, time_format)
+            return parsed_time.timestamp()
+        except ValueError as e:
+            raise ValueError(f"Invalid date string format: {e}")
+    else:
+        raise TypeError("Input must be a datetime object or a string in the format 'YYYY-MM-DD HH:MM:SS'")
 
-def time_to_timestamp(timestr):
-    time_format = "%Y-%m-%d %H:%M:%S"
-    timestamp = datetime.strptime(timestr, time_format).timestamp()
-    return timestamp
 
 class CorpusAgent:
     retriever = retriever_service_client
@@ -77,6 +85,7 @@ class CorpusAgent:
         chunk.custom_metadata.append(glm.CustomMetadata(key="timestamp", numeric_value=timestamp))
 
         create_chunk_request = glm.CreateChunkRequest(parent=self.current_document, chunk=chunk)
+        print(create_chunk_request)
         response = self.retriever.create_chunk(create_chunk_request)
         print(response)
         return
@@ -87,7 +96,7 @@ class CorpusAgent:
         min_lng = filters["min_lng"]
         max_lat = filters["max_lat"]
         max_lng = filters["max_lng"]
-        current_time = filters["current_time"]
+        current_time = filters["cur_time"]
         time_range = filters["time_range"]
 
         lat_filter = glm.MetadataFilter(
@@ -200,18 +209,20 @@ if __name__ == "__main__":
 # location: (30.0988, 121.98765)
 # Information: Whoa a traffic accident! Send Help!
 # '''
-#     # agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
+    agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
+
     filters = {
         "min_lat":24.0,
         "max_lat":31.0,
         "min_lng":115.0,
         "max_lng":125.0,
-        "current_time": "2024-10-19 00:00:00",
+        "cur_time": "2024-10-19 00:00:00",
         "time_range": 60
     }
 
 
-    agent.query_corpus(filters=filters, query="What is the color of spongebob's pants?")
+    agent.query_corpus(filters=filters, query="Give me traffic info")
+
     # try:
     #     agent.generate_answer(filters=None, query=query, answer_style="ABSTRACTIVE")
     # except Exception as e:

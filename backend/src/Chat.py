@@ -23,7 +23,6 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
     # print("in gen ans from")
     # print(answer)
     response = corpus_agent.query_corpus(filters, query)
-    print("\n\nresponse from corpus")
     context = ""
     reference = []
     i = 0
@@ -44,13 +43,9 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         }
         reference.append(ref)
         # print(text)
-    print("\n\ncontext:")
-    print(context)
-    print("\n\nreference")
     # for i, item in enumerate(reference, 1):
     #     item = json.dumps(item, indent=4)
     #     print(item)
-    print(reference)
     return context, reference
         
 def answer_on_your_own(answer:str):
@@ -58,11 +53,9 @@ def answer_on_your_own(answer:str):
 
 def parse_response(response):
     answer = ""
-    print(response.parts)
     for part in response.parts:
         if fn := part.function_call:
             args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
-            print(f"{fn.name}({args})")
             if(fn.name == "query_corpus"):
                 return "query_corpus"
             elif(fn.name == "answer_on_your_own"):
@@ -71,9 +64,7 @@ def parse_response(response):
                         answer = val
                 return answer
         else:
-            print(part.text)
             answer += part.text
-    print(answer)
     return answer
 
 
@@ -135,22 +126,17 @@ class ChatAgent():
         my location: ({current_lat},{current_lng})
         question: {message} 
         '''
-        print("query: ")
-        print(query)
         response = chat.send_message(query)
 
         answer = parse_response(response)
         if answer == "query_corpus":
             context, reference = generate_context(query=query, filters=filters)
             response2 = chat.send_message(context)
-            print(response2)
-            print(chat.history)
             answer2 = parse_response(response2)
             return answer2, reference
 
         
 
-        print(answer)
         return answer, None
 
         
@@ -160,12 +146,35 @@ if __name__=="__main__":
     agent = ChatAgent()
 
     filters = {
-        "min_lat":24.0,
-        "max_lat":30.0,
-        "min_lng":115.0,
-        "max_lng":125.0,
-        "current_time": "2024-10-19 00:00:00",
-        "time_range": 60
+        "min_lat": -90,
+        "max_lat": 90,
+        "min_lng": -180,
+        "max_lng": 180,
+        "cur_time": "2024-10-19 12:09:57",
+        "time_range": 10
     }
     # agent.start_chat()
-    agent.chat(message="Are there dangerous acitivity nearby?", filters=filters, current_lat=25.09871, current_lng=121.9876)
+    agent.chat(message="tell me how many people here", filters=filters, current_lat=-90, current_lng=180)
+
+
+    '''
+    {
+      "content": "tell me how many people here",
+      "cur_lat": -90,
+      "cur_lng": -180,
+      "filter": {
+        "min_lat": -90,
+        "max_lat": 90,
+        "min_lng": -180,
+        "max_lng": 180,
+        "cur_time": "2024-10-19T12:09:57.034Z",
+        "time_range": 10
+      }
+    }
+    '''
+
+    print(DEV_DOC)
+    corpus_agent = CorpusAgent(document=DEV_DOC)
+    
+    content = '''location: (30.0988, 121.98765) Information: Whoa a traffic accident! Send Help! '''
+    corpus_agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")

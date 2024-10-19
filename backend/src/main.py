@@ -3,7 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, constr
 from typing import List, Optional
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 import logfire
+
+import google.ai.generativelanguage as glm
+from google.oauth2 import service_account
+from Corpus import CorpusAgent
+from Chat import ChatAgent
     
 class Filter(BaseModel):
     min_lat: float = Field(..., ge=-90.0, le=90.0)
@@ -45,7 +52,6 @@ class ShareRequest(BaseModel):
 class ShareResponse(BaseModel):
     status: str 
 
-
 ########## API ###########
 
 app = FastAPI(root_path="/api")
@@ -64,22 +70,58 @@ async def root():
 
 @app.post("/ask")
 async def ask(ask_request: AskRequest) -> AskResponse:
-    response = AskResponse(
-        response="Hello",
-        references=[
-            Reference(
-                info="test",
-                lat=25.0330,
-                lng=121.5654,
-                time="2024-10-19 10:05:44"
-            )
-        ]
-    )
-    return response
+    try:
+        ask_request.filter.cur_time = ask_request.filter.cur_time.strftime("%Y-%m-%d %H:%M:%S")
+        agent = ChatAgent()
+        answer, references = agent.chat(
+            message=ask_request.content,
+            filters=ask_request.filter.dict(),
+            current_lat=ask_request.cur_lat,
+            current_lng=ask_request.cur_lng,
+        )
+        print(answer, references);
+        response = AskResponse(
+            response=answer,
+            references=[
+                Reference(
+                    info=ref["info"],
+                    lat=ref["lat"],
+                    lng=ref["lng"],
+                    time=datetime.fromtimestamp(ref["time"]),
+                ) for ref in (references or [])  # Handle case where references are None
+            ]
+        )
+        return response
+
+    except Exception as e:
+        print(f"Error occurred in ask(): {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Internal server error. Please try again later."
+        )
+
 
 @app.post("/share")
 async def share(share_request: ShareRequest) -> ShareResponse:
-    response = ShareResponse(
-        status="OK"
-    )
-    return response 
+    try:
+        load_dotenv()
+        DEV_DOC=os.getenv("TEST_DOCUMENT")
+        agent = CorpusAgent(document=DEV_DOC)
+        agent.add_info_to_document(
+            content=share_request.content, 
+            lat=share_request.metadata.lat, 
+            lng=share_request.metadata.lng, 
+            time=share_request.metadata.time.strftime("%Y-%m-%d %H:%M:%S")
+        )
+        response = ShareResponse(
+            status="OK"
+        )
+        return response
+
+    except Exception as e:
+        print(f"Error occurred in share(): {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Internal server error. Please try again later."
+        )
+
