@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, HttpUrl
 from typing import List, Optional, Union
 from datetime import datetime
 from dotenv import load_dotenv
@@ -9,6 +9,8 @@ import logfire
 
 import google.ai.generativelanguage as glm
 from google.oauth2 import service_account
+
+from PhotoModel import PhotoModel
 from Corpus import CorpusAgent
 from Chat import ChatAgent
     
@@ -46,7 +48,8 @@ class AskResponse(BaseModel):
 
 
 class ShareRequest(BaseModel):
-    content: str
+    content: str = Field(..., description="User-provided text related to the image.")
+    uri: Optional[HttpUrl] = Field(..., description="URL of the uploaded image.")
     metadata: MetaData
 
 
@@ -103,6 +106,32 @@ async def ask(ask_request: AskRequest) -> AskResponse:
         )
 
 
+
+@app.post("/share")
+async def share(share_request: ShareRequest) -> ShareResponse:
+    try:
+        print("share: ", share_request.content)
+        photo_model = PhotoModel()
+        result = photo_model.analyze_image(share_request.uri, share_request.content)
+        load_dotenv()
+        DEV_DOC = os.getenv("TEST_DOCUMENT")
+        agent = CorpusAgent(document=DEV_DOC)
+        agent.add_info_to_document(
+            content=result,
+            lat=share_request.metadata.lat,
+            lng=share_request.metadata.lng,
+            time=share_request.metadata.time.strftime("%Y-%m-%d %H:%M:%S")
+        )
+
+        return ShareResponse(status="OK")
+
+    except Exception as e:
+        print(f"Error occurred in share(): {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error. Please try again later."
+        )
+'''
 @app.post("/share")
 async def share(share_request: ShareRequest) -> ShareResponse:
     try:
@@ -127,4 +156,4 @@ async def share(share_request: ShareRequest) -> ShareResponse:
             status_code=500, 
             detail="Internal server error. Please try again later."
         )
-
+'''

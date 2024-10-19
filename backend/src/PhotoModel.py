@@ -35,18 +35,21 @@ class PhotoModel:
         except FileNotFoundError:
             raise FileNotFoundError(f"System instruction file not found: {file_path}")
 
-    def analyze_image(self, image_path: str) -> str:
-        """Analyze the image and generate a description."""
-        with open(image_path, "rb") as img:
-            response = self.model.generate(
-                inputs={"image": img},
-                task="image-to-text",
-                context="Analyze the provided photo and generate a description."
+    def analyze_image(self, image_path: str, user_input: str) -> str:
+        """Analyze the image and generate a description combined with user input."""
+        try:
+            myfile = genai.upload_file(image_path)
+            print(f"Uploaded file: {myfile}")
+
+            result = self.model.generate_content(
+                [myfile, "\n\n User Input:", user_input]
             )
 
-        generated_text = response.get("generated_text", "").strip()
+            generated_text = result.text
+            if generated_text != "-1":
+                return generated_text + " (Generated from photo)"
+            return generated_text 
+        except Exception as e:
+            print(f"Error uploading image: {e}")
 
-        if generated_text != "-1":
-            return generated_text + " (Generated from photo)"
-        return generated_text
-
+            return user_input if user_input else "-1"
