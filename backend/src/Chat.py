@@ -71,7 +71,7 @@ class ChatAgent():
         )
         return
     
-    def chat(self, message):
+    def chat(self, message, filters):
         chat = self.model.start_chat()
         response = chat.send_message(message)
 
@@ -80,17 +80,17 @@ class ChatAgent():
                 args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
                 print(f"{fn.name}({args})")
                 if(fn.name == "generate_ans_from_corpus"):
-                    metadata_filters = generate_filter()
-                    address = generate_address(message)
-                    if address == None:
-                        query = message
-                    else:
-                        query = f'''
-target location: {address}
-message: {message} 
-                        '''
-                    print(query)
-                    corpus_agent_response = generate_ans_from_corpus(query=query, filters=metadata_filters)
+                    
+#                     address = generate_address(message)
+#                     if address == None:
+#                         query = message
+#                     else:
+#                         query = f'''
+# target location: {address}
+# message: {message} 
+#                         '''
+#                     print(query)
+                    corpus_agent_response = generate_ans_from_corpus(query=message, filters=filters)
                     return corpus_agent_response
             else:
                 print(part.text)
@@ -103,7 +103,7 @@ message: {message}
 
 if __name__=="__main__":
     generation_config = {
-        "temperature": 0.0,
+        "temperature": 0.5,
     }
 
     agent = ChatAgent(
@@ -122,16 +122,13 @@ if __name__=="__main__":
         tool_config={'function_calling_config':'ANY'},
     )
 
-    # filters = {
-    #     "location": {
-    #         "lat":12.36,
-    #         "lng":112.65,
-    #         "dst":5.0
-    #     },
-    #     "timestamp": {
-    #         "current_time": "2024-10-16 09:47:00",
-    #         "range": 60
-    #     }
-    # }
+    filters = {
+        "min_lat":24.0,
+        "max_lat":30.0,
+        "min_lng":115.0,
+        "max_lng":125.0,
+        "current_time": "2024-10-19 00:00:00",
+        "time_range": 60
+    }
 
-    agent.chat("Are there any traffic accidents in Taipei?")
+    agent.chat("Are there any dangerous events?", filters=filters)

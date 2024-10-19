@@ -171,10 +171,14 @@ class CorpusAgent:
                                         answer_style=answer_style)
         response = generative_service_client.generate_answer(req)
         print("corpus response: ")
+        response_text = ""
         # print(type(response.answer.content.parts[0].text))
-        print(response.answer.content.parts[0].text)
+        for part in response.answer.content.parts:
+            response_text += part.text
+        
+        print(response_text)
         print(response.answerable_probability)
-        return response.answer.content.parts[0].text, response.answerable_probability
+        return response_text, response.answerable_probability
     
 
 if __name__ == "__main__":
@@ -184,7 +188,12 @@ if __name__ == "__main__":
     # agent.create_document(display_name="test document", time="2024-10-18 10:21:00")
     # filters = {}
     content = '''
-traffic accident! Aaah                   !
+location: 
+    latitude: 25.0329693
+    longitude: 121.5654177
+
+message:
+    A traffic accident is here!
 '''
     # agent.add_info_to_document(content=content, lat=25.0329693, lng=121.5654177, time="2024-10-19 00:00:00")
     filters = {
@@ -197,11 +206,17 @@ traffic accident! Aaah                   !
     }
 
     query = '''
+Instructions:
+The corpus is consisted of crowd souced information, answer by summarizing the reports of events or opinions.
+Don't show the messages in the corpus in your response. If there are multiple reports close together there's a high probability the event actually occurred.
+Let's think step by step.
+
+message:
 are there any traffic accidents nearby?
 '''
-    agent.query_corpus(filters=filters, query="Are there any traffic accidents?")
+    agent.query_corpus(filters=filters, query=query)
     try:
-        agent.generate_answer(filters=None, query=query, answer_style="VERBOSE")
+        agent.generate_answer(filters=None, query=query, answer_style="ABSTRACTIVE")
     except Exception as e:
         print(e)
     # get_document_request = glm.GetDocumentRequest(name="corpora/gemihubcorpus-vviogw42kc9t/documents/test-document-3-hknhyc3kwtsx")
