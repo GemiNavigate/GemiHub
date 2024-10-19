@@ -116,6 +116,7 @@ class ChatAgent():
             After context is given,  which is composed of crowd sourced information, answer based on the following steps:
             1. If the question involves degree of distance, such as 'nearby', 'close', 'within walking distance', evaluate the distance by estimating the distance between the two coordinates.
             2. anwswer based on the contexts, and answer in detail about the proportion of different reports.
+            3. If there are no relevant information regarding the question, simply respond there are no matching information.
 
             IMPORTANT: 
             Tell me the credibility of your conclusion based on proportion and amount of different opinions about this subject.
@@ -166,12 +167,12 @@ if __name__=="__main__":
     agent = ChatAgent()
 
     filters = {
-        "min_lat":24.0,
-        "max_lat":30.0,
-        "min_lng":115.0,
-        "max_lng":125.0,
-        "current_time": "2024-10-19 00:00:00",
-        "time_range": 60
+        "min_lat":-90.0,
+        "max_lat":-180.0,
+        "min_lng":-180.0,
+        "max_lng":180.0,
+        "current_time": "2024-10-19 12:09:57",
+        "time_range": 10
     }
     # agent.start_chat()
-    agent.chat(message="Are there dangerous acitivity nearby?", filters=filters, current_lat=25.09871, current_lng=121.9876)
+    agent.chat(message="How's the weather?", filters=filters, current_lat=-90, current_lng=-180)
