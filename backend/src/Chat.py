@@ -34,6 +34,8 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         lat = metadata[0].numeric_value
         lng = metadata[1].numeric_value
         timestamp = metadata[2].numeric_value
+        time = datetime.fromtimestamp(timestamp)
+        time = time.strftime("%y%m%d %H%M%S")
         
         context += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
         i += 1
@@ -41,7 +43,7 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
             "info": text, 
             "lat": lat,
             "lng": lng,
-            "time": timestamp,
+            "time": time,
         }
         reference.append(ref)
         # print(text)
@@ -167,12 +169,12 @@ if __name__=="__main__":
     agent = ChatAgent()
 
     filters = {
-        "min_lat":24.0,
-        "max_lat":30.0,
-        "min_lng":115.0,
-        "max_lng":125.0,
-        "current_time": "2024-10-19 00:00:00",
+        "min_lat":0.0,
+        "max_lat":24.78457,
+        "min_lng":0.0,
+        "max_lng":120.99496,
+        "current_time": "2024-10-10 12:00:00",
         "time_range": 60
     }
     # agent.start_chat()
-    agent.chat(message="Are there dangerous acitivity nearby?", filters=filters, current_lat=25.09871, current_lng=121.9876)
+    agent.chat(message="is there any emergency around engineering building VI", filters=filters, current_lat=25.09871, current_lng=121.9876)

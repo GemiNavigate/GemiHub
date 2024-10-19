@@ -89,7 +89,7 @@ class CorpusAgent:
         max_lng = filters["max_lng"]
         current_time = filters["current_time"]
         time_range = filters["time_range"]
-
+        
         lat_filter = glm.MetadataFilter(
             key="chunk.custom_metadata.latitude",
             conditions=[
@@ -132,7 +132,9 @@ class CorpusAgent:
 
         metadata_filters.append(time_filter)
         
-            
+        print("\n\nfilter:\n") 
+        print(metadata_filters)
+        print("\n\n")
         return metadata_filters
 
 
@@ -200,7 +202,41 @@ if __name__ == "__main__":
 location: (30.0988, 121.98765)
 Information: No accidents acutally happened
 '''
-    agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
+    # agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
+    agent.add_info_to_document(content="清大客運站爆多人，要遲到了:(", lat=24.795523820, lng=120.998332165, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="這裡有很多仙草蜜", lat=24.78979280059065, lng=120.99996938779464, time="2024-10-20 11:45:00")
+    agent.add_info_to_document(content="小心工六這邊剛剛火災了！", lat=24.786009923950427, lng=120.99734198471171, time="2024-10-20 11:52:00")
+    agent.add_info_to_document(content="Engineering building V is on fire! Be careful if you have to pass through here.", lat=24.786009923950427, lng=120.99734198471171, time="2024-10-20 12:00:00")
+    agent.add_info_to_document(content="Help! a car just hit a pedestrian!", lat=24.795931608762007, lng=120.99790046557531, time="2024-10-20 11:57:00")
+    agent.add_info_to_document(content="There are so many people in the badminton hall", lat=24.78743081211189, lng=121.00154734974369, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="排球場要滿了", lat=24.78785141965718, lng=120.99511917943207, time="2024-10-20 11:50:00")
+    agent.add_info_to_document(content="作業要寫不完了.... 快要暴斃嗚嗚嗚", lat=24.78375794639863, lng=120.99807266308567, time="2024-10-20 11:51:00")
+    agent.add_info_to_document(content="今天研三有賣手工餅乾，到下午六點要買要快！", lat=24.783923190127197, lng=120.99670760761394, time="2024-10-20 11:49:00")
+    agent.add_info_to_document(content="成功湖中間，簽:)", lat=24.793521971397826, lng=120.99550801345022, time="2024-10-20 11:48:00")
+    agent.add_info_to_document(content="有人在竹湖偷談戀愛 :0", lat=24.788241982508584, lng=120.99975209502698, time="2024-10-20 11:47:00")
+    agent.add_info_to_document(content="I found an Iphone 16 pro max here, I put it in the flower bed nearby.", lat=24.790555291230152, lng=120.9959547589073, time="2024-10-20 11:46:00")
+    agent.add_info_to_document(content="I found a student ID card here, the owner of this card is Bill.", lat=24.788279536582422, lng=120.99879241964695, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="比爾同學你的學生證掉了，我幫你把學生證放在樓梯角", lat=24.788279536582422, lng=120.99879241964695, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="Google的題目好好玩", lat=24.78880070020733, lng=120.99571630047818, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="Gemini 可以乖一點嗎", lat=24.788723386750387, lng=120.99564388083809, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="梅竹黑克松黑客組設備測試要結束囉", lat=24.788754433892432, lng=120.99587522135512, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="Google的題目怎麼這麼難", lat=24.788723995517937, lng=120.9957478164327, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="誒有電腦燒起來了", lat=24.78871303770131, lng=120.9957102655082, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="something’s burning", lat=24.78876539170542, lng=120.99567070292701, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="something smells burnt", lat=24.7887812196558, lng=120.99577463852161, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="不覺得有燒焦味嗎", lat=24.788633289117712, lng=120.99591076062293, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="體育館怎麼在冒煙", lat=24.788665553818, lng=120.99564522194252, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="Gemini 怎麼這麼難搞", lat=24.788663118746584, lng=120.9955748139591, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="電腦燒起來了", lat=24.78885001033977, lng=120.99563114034585, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="computer’s burning!", lat=24.788745302380864, lng=120.99572837041822, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="something smells like burnt plastic", lat=24.78857789121649, lng=120.99563784586806, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="the gym’s empty", lat=24.788568405136, lng=120.99565974905781, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="the lat pulldown machine is broken", lat=24.788601887389486, lng=120.99562085702887, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="這裡有遺失的錢包", lat=24.788749817965027, lng=120.99565371408781, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="Computer burning at table 2", lat=24.78875468810445, lng=120.99563024476001, time="2024-10-20 11:55:00")
+    agent.add_info_to_document(content="第二桌電腦起火大家小心", lat=24.788801563186517, lng=120.99566243126671, time="2024-10-20 11:55:00")
+
+
     # filters = {
     #     "min_lat":24.0,
     #     "max_lat":31.0,
