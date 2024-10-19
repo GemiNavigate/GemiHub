@@ -1,120 +1,79 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, FlatList, Platform, PermissionsAndroid } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, FlatList, Platform, PermissionsAndroid, Animated, PanResponder } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import Geolocation from '@react-native-community/geolocation';
+import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import 'react-native-get-random-values';
+import { GOOGLE_MAPS_API_KEY } from '../config/constants';
 import GetLocation from 'react-native-get-location';
 import { TokenContext, LocationContext } from './Context';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const { width, height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
     },
-    chatContainer: {
-        flex: 1,
-        paddingHorizontal: 10,
+    map: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 0,
+    },
+    coordinatesContainer: {
+        position: 'absolute',
+        bottom: 20,
+        left: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        padding: 10,
+        borderRadius: 5,
+        zIndex: 1,
+    },
+    coordinatesText: {
+        fontSize: 12,
+        color: '#333',
+    },
+    buttonContainer: {
+      position: 'absolute',
+      top: 580,
+      right: 20,
+      zIndex: 2,
+      backgroundColor: '#fff',
+      borderRadius: 50,
+      padding: 10,
+      elevation: 5,
+    },
+    searchInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        // marginBottom: 10,
+    },
+    searchButton: {
+        backgroundColor: '#708D81',
+        borderRadius: 25,
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        position: 'absolute',
+        right: 0,
+        top: 0
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
+        marginBottom: 10,
+        top: 50,
+        position: 'absolute'
     },
-    input: { // 輸入框
+    input: {
         flex: 1,
-        height: 50,
-        borderColor: '#e0e0e0',
+        height: 40,
+        borderColor: 'gray',
         borderWidth: 1,
         borderRadius: 20,
         paddingHorizontal: 15,
+        backgroundColor: 'white',
         marginRight: 10,
-        fontSize: 16,
-    },
-   
-    sendButton: {
-        backgroundColor: '#708D81',
-        borderRadius: 20, 
-        padding: 10, 
-    },
-    // 訊息容器樣式
-    messageContainer: {
-        maxWidth: '70%',
-        padding: 10,
-        borderRadius: 10,
-        marginVertical: 5,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    userMessage: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#708D81',
-    },
-    systemMessage: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#fff',
-    },
-    messageText: {
-        fontSize: 16,
-        flex: 1,
-    },
-    userMessageText: {
-        color: '#fff',
-    },
-    systemMessageText: {
-        color: '#000',
-    },
-    mapButton: {
-        marginLeft: 10,
-    },
-
-    // 地圖相關樣式
-    mapContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)', // 半透明背景
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-    },
-
-    mapContent: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'white',
-        borderRadius: 0,
-        overflow: 'hidden',
-    },
-    mapView: {
-        width: '100%',
-        height: '100%',
-    },
-    // 關閉按鈕樣式
-    closeButton: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        backgroundColor: 'white',
-        borderRadius: 15,
-        padding: 8,
-        zIndex: 1,
-        // 陰影效果
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
     },
     tokenContainer: {
       position: 'absolute',
@@ -136,29 +95,52 @@ const styles = StyleSheet.create({
     tokenIcon: {
         marginRight: 5,
     },
+    searchContainer: {
+        position: 'absolute',
+        top: 20,
+        left: 10,
+        right: 10,
+        zIndex: 1,
+        backgroundColor: 'transparent',
+    },
+    submitButton: {
+        backgroundColor: '#708D81',
+        borderRadius: 25,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    buttonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        marginLeft: 5,
+    },
 });
 
 
 export default function AskerScreen() {
-  const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
-  const [showMap, setShowMap] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [permissionGranter, setPermissionGranter] = useState(false);
-  const { tokens, setTokens } = useContext(TokenContext);
-  const flatListRef = useRef(null);
   const mapRef = useRef(null);
+  const [permissionGranter, setPermissionGranter] = useState();
+  const { currentLocation, setCurrentLocation } = useContext(LocationContext);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [question, setQuestion] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { tokens, setTokens } = useContext(TokenContext);
+  const [mapRegion, setMapRegion] = useState(null);
+  const [cornerCoordinates, setCornerCoordinates] = useState(null);
 
-   /* tokens */
-  const decreaseTokens = () => {
-    if (tokens > 0) {
-        setTokens(tokens - 10); 
-    }
-  };
 
   useEffect(() => {
-      _getLocationPermission();
+      const checkPermissions = async () => {
+          const locationGranted = await requestPermission(
+              PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+              'Location Permission',
+              'Please allow permission to continue...'
+          );
+          setPermissionGranter(locationGranted);
+      };
+      checkPermissions();
   }, []);
 
   useEffect(() => {
@@ -167,32 +149,27 @@ export default function AskerScreen() {
       }
   }, [permissionGranter]);
 
-  async function _getLocationPermission() {
+  const requestPermission = async (permission, title, message) => {
       if (Platform.OS === 'android') {
           try {
-              const granted = await PermissionsAndroid.request(
-                  PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-                  {
-                      title: 'Location Permission',
-                      message: 'Please allow permission to continue...',
-                      buttonNeutral: 'Ask Me Later',
-                      buttonNegative: 'Cancel',
-                      buttonPositive: 'OK',
-                  },
-              );
-              if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                  setPermissionGranter(true);
-              } else {
-                  console.log('Location permission denied');
-                  setPermissionGranter(false);
-              }
+              const granted = await PermissionsAndroid.request(permission, {
+                  title,
+                  message,
+                  buttonNeutral: 'Ask Me Later',
+                  buttonNegative: 'Cancel',
+                  buttonPositive: 'OK',
+              });
+              return granted === PermissionsAndroid.RESULTS.GRANTED;
           } catch (err) {
               console.warn(err);
+              return false;
           }
+      } else {
+          return true; // iOS permissions are handled differently
       }
-  }
+  };
 
-  async function _getCurrentLocation() {
+  const _getCurrentLocation = async () => {
       try {
           const location = await GetLocation.getCurrentPosition({
               enableHighAccuracy: true,
@@ -203,164 +180,214 @@ export default function AskerScreen() {
               longitude: location.longitude,
           };
           setCurrentLocation(currentCoordinate);
+          setMapRegion(currentCoordinate);
           moveToLocation(currentCoordinate.latitude, currentCoordinate.longitude);
       } catch (error) {
-          console.warn('Error getting current location:', error);
-          const defaultLocation = {
-              latitude: 24.787926,
-              longitude: 120.997576,
-          };
-          setCurrentLocation(defaultLocation);
-          moveToLocation(defaultLocation.latitude, defaultLocation.longitude);
-      }
-  }
-
-  async function moveToLocation(latitude, longitude) {
-      mapRef.current?.animateToRegion(
-          {
-              latitude,
-              longitude,
-              latitudeDelta: 0.015,
-              longitudeDelta: 0.0121,
-          },
-          2000,
-      );
-  }
-
-  const handleSend = () => {
-      if (inputText.trim()) {
-          const newUserMessage = {
-              id: messages.length,
-              text: inputText.trim(),
-              isUser: true,
-          };
-          setMessages([...messages, newUserMessage]);
-          decreaseTokens();
-          setInputText('');
-          
-          setTimeout(() => {
-              const systemResponse = {
-                  id: messages.length + 1,
-                  text: `Here's a response to: "${inputText.trim()}"`,
-                  isUser: false,
-                  location: currentLocation,
-              };
-              setMessages(prevMessages => [...prevMessages, systemResponse]);
-          }, 1000);
+        //   console.warn('Error getting current location:', error.message);
       }
   };
 
-  useEffect(() => {
-      if (flatListRef.current) {
-          flatListRef.current.scrollToEnd({ animated: true });
+  // Function to move map to the current location
+  const moveToLocation = (latitude, longitude) => {
+      if (mapRef.current) {
+          mapRef.current.animateToRegion(
+              {
+                  latitude,
+                  longitude,
+                  latitudeDelta: 0.015,
+                  longitudeDelta: 0.0121,
+              },
+              2000
+          );
       }
-  }, [messages]);
-
-  const handleMapPress = (message) => {
-      setSelectedLocation(message.location || currentLocation);
-      setShowMap(true);
+  };
+  
+  // add coins
+  const increaseTokens = () => {
+      setTokens(tokens + 10); 
   };
 
-  const renderMessage = ({ item }) => (
-      <View style={[
-          styles.messageContainer,
-          item.isUser ? styles.userMessage : styles.systemMessage
-      ]}>
-          <Text style={[
-              styles.messageText,
-              item.isUser ? styles.userMessageText : styles.systemMessageText
-          ]}>
-              {item.text}
-          </Text>
-          {!item.isUser && (
-              <TouchableOpacity 
-                  style={styles.mapButton} 
-                  onPress={() => handleMapPress(item)}
-              >
-                  <MaterialCommunityIcons 
-                      name="map-marker" 
-                      size={24} 
-                      color="#708D81" 
-                  />
-              </TouchableOpacity>
-          )}
+  const handleSubmit = async () => {
+    try {
+        setIsLoading(true);
+        if (selectedLocation && question) {
+            console.log('Selected Location:', selectedLocation);
+            console.log('Question:', question);
+        } else {
+            alert('Please select a location and enter a question');
+        }
+    } catch (error) {
+        console.error('Error submitting:', error);
+        alert('An error occurred while submitting');
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const onRegionChangeComplete = (region) => {
+    setMapRegion(region);
+    if (mapRef.current) {
+        mapRef.current.getMapBoundaries().then((bounds) => {
+            setCornerCoordinates({
+                northEast: bounds.northEast,
+                southWest: bounds.southWest,
+            });
+        });
+    }
+  };
+
+  if (!permissionGranter) return (
+      <View>
+          <Text>Please allow permission to continue...</Text>
       </View>
   );
 
-  if (!permissionGranter) {
-      return (
-          <View style={styles.permissionContainer}>
-              <Text style={styles.permissionText}>
-                  Please allow location permission to continue...
-              </Text>
-          </View>
-      );
-  }
-
   return (
       <View style={styles.container}>
-          <FlatList
-              ref={flatListRef}
-              data={messages}
-              renderItem={renderMessage}
-              keyExtractor={item => item.id.toString()}
-              style={styles.chatContainer}
-          />
-          <View style={styles.inputContainer}>
-              <TextInput
-                  style={styles.input}
-                  value={inputText}
-                  onChangeText={setInputText}
-                  placeholder="Ask a question..."
-                  onSubmitEditing={handleSend}
-              />
-              <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-                  <MaterialCommunityIcons name="send" size={24} color="#fff" />
-              </TouchableOpacity>
+          <MapView
+              ref={mapRef}
+              provider={PROVIDER_GOOGLE}
+              style={styles.map}
+              region={currentLocation ? {
+                  latitude: currentLocation.latitude,
+                  longitude: currentLocation.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+              } : {
+                  // Fallback value if location is not available yet
+                  latitude: 25.01349,  
+                  longitude: 121.540646,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+              }}
+              onRegionChangeComplete={onRegionChangeComplete}
+            >
+              
+              {currentLocation && (
+                  <Marker
+                      coordinate={currentLocation}
+                      title="My Location"
+                      description="You are here"
+                  />
+              )}
+          </MapView>
+          
+          {/* Input Box for Posting */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputContainer}>
+                <GooglePlacesAutocomplete 
+                    placeholder="Search location"
+                    placeholderTextColor="#b0b0b0"
+                    fetchDetails={true}
+                    onPress={(data, details = null) => {
+                        // 使用者選擇地點後，處理資料
+                        const searchRegion = {
+                            latitude: details?.geometry?.location.lat,
+                            longitude: details?.geometry?.location.lng,
+                            latitudeDelta: 0.01,
+                            longitudeDelta: 0.01,
+                        };
+                        // console.log(data, details);
+                        console.log(searchRegion.latitude, searchRegion.longitude);
+                        moveToLocation(searchRegion.latitude, searchRegion.longitude);
+                        setMapRegion(searchRegion);
+                        setSelectedLocation(searchRegion);
+                    }}
+                    query={{
+                        key: GOOGLE_MAPS_API_KEY, 
+                        language: 'zh-TW',            
+                    }}
+                    styles={{
+                        textInputContainer: {
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: 'transparent', // Adjust the background
+                            marginHorizontal: 10,           // Horizontal margin
+                            zIndex: 50,
+                            width: 320,
+                            left: -10
+                        },
+                        textInput: {
+                            flex: 1,
+                            height: 40,
+                            borderColor: 'gray',
+                            borderWidth: 1,
+                            borderRadius: 20,
+                            paddingHorizontal: 15,
+                            backgroundColor: 'white',
+                            marginRight: 10,
+                            zIndex: 50
+                        },
+                        listView: {
+                            backgroundColor: '#fff',        // Background color of the suggestions list
+                            borderWidth: 1,
+                            borderColor: '#ccc',            // Border color of the dropdown
+                            borderRadius: 10,               // Radius for dropdown items
+                            marginHorizontal: 10,
+                            zIndex: 50
+                        },
+                        
+                    }}
+                />
+                <TouchableOpacity 
+                    style={styles.searchButton} 
+                    onPress={() => {
+                        if (currentLocation) {
+                            moveToLocation(currentLocation.latitude, currentLocation.longitude);
+                        }
+                    }}
+                    disabled={isLoading}
+                >
+                    <MaterialCommunityIcons name="map-marker" size={20} color="white" />
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputContainer}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Enter your question"
+                    value={question}
+                    onChangeText={setQuestion}
+                />
+                <TouchableOpacity 
+                    style={styles.submitButton} 
+                    onPress={handleSubmit}
+                    disabled={isLoading}
+                >
+                    <Icon name="send" size={20} color="white" />
+                    <Text style={styles.buttonText}>
+                        {isLoading ? 'Sending...' : 'Submit'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
           </View>
 
-          {showMap && (
-              <View style={styles.mapContainer}>
-                  <View style={styles.mapContent}>
-                      <TouchableOpacity 
-                          style={styles.closeButton}
-                          onPress={() => setShowMap(false)}
-                      >
-                          <MaterialCommunityIcons name="close" size={24} color="#000" />
-                      </TouchableOpacity>
-                      <MapView
-                          ref={mapRef}
-                          provider={PROVIDER_GOOGLE}
-                          style={styles.mapView}
-                          region={selectedLocation || currentLocation ? {
-                              latitude: (selectedLocation || currentLocation).latitude,
-                              longitude: (selectedLocation || currentLocation).longitude,
-                              latitudeDelta: 0.01,
-                              longitudeDelta: 0.01,
-                          } : {
-                              latitude: 24.787926,
-                              longitude: 120.997576,
-                              latitudeDelta: 0.01,
-                              longitudeDelta: 0.01,
-                          }}
-                      >
-                          {(selectedLocation || currentLocation) && (
-                              <Marker
-                                  coordinate={{
-                                      latitude: (selectedLocation || currentLocation).latitude,
-                                      longitude: (selectedLocation || currentLocation).longitude,
-                                  }}
-                              />
-                          )}
-                      </MapView>
-                  </View>
-              </View>
-          )}
-          {/* token  */}
-          <View style={styles.tokenContainer}>
-                <MaterialCommunityIcons name="currency-usd" size={24} color="#001427" style={styles.tokenIcon} />
-                <Text style={styles.tokenText}>{tokens}</Text>
-            </View>
+          {cornerCoordinates && (
+                <View style={styles.coordinatesContainer}>
+                    <Text style={styles.coordinatesText}>
+                        NE: {cornerCoordinates.northEast.latitude.toFixed(6)}, {cornerCoordinates.northEast.longitude.toFixed(6)}
+                    </Text>
+                    <Text style={styles.coordinatesText}>
+                        SW: {cornerCoordinates.southWest.latitude.toFixed(6)}, {cornerCoordinates.southWest.longitude.toFixed(6)}
+                    </Text>
+                    <Text style={styles.coordinatesText}>
+                        NW: {cornerCoordinates.southWest.latitude.toFixed(6)}, {cornerCoordinates.northEast.longitude.toFixed(6)}
+                    </Text>
+                    <Text style={styles.coordinatesText}>
+                        SE: {cornerCoordinates.northEast.latitude.toFixed(6)}, {cornerCoordinates.southWest.longitude.toFixed(6)}
+                    </Text>
+                </View>
+            )}
+          {/* Move to Current Location Button */}
+          {/* <TouchableOpacity
+              style={styles.buttonContainer}
+              onPress={() => {
+                  if (currentLocation) {
+                      moveToLocation(currentLocation.latitude, currentLocation.longitude);
+                  }
+              }}>
+              <MaterialCommunityIcons name="map-marker" size={24} color="#001427" />
+          </TouchableOpacity> */}
       </View>
   );
 }

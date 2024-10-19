@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -6,15 +6,20 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import ShareScreen from './src/screens/share.js';
 import AskScreen from './src/screens/ask.js';
 import { TokenProvider, LocationProvider } from './src/screens/Context.js';
-
-
+import { TokenContext, LocationContext } from './src/screens/Context.js';
 const Tab = createBottomTabNavigator(); 
 
 function CustomHeader() {
+  const { tokens } = useContext(TokenContext);
   return (
     <View style={styles.header}>
       <Text style={styles.headerTitle}>GemiHub</Text>
+      <View style={styles.tokenContainer}>
+        <MaterialCommunityIcons name="currency-usd" size={24} color="#001427" style={styles.tokenIcon} />
+        <Text style={styles.tokenText}>{tokens}</Text>
+      </View>
     </View>
+   
   );
 }
 
@@ -74,6 +79,26 @@ const styles = StyleSheet.create({
     color: '#F4D58D',
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  tokenContainer: {
+    position: 'absolute',
+    top: 15, 
+    left: 10, 
+    padding: 3,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    elevation: 5,
+  },
+  tokenText: {
+      color: '#001427',
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginRight: 5,
+  },
+  tokenIcon: {
+      marginRight: 5,
   },
 });
 
