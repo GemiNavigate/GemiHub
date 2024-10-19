@@ -159,7 +159,6 @@ class CorpusAgent:
     def query_corpus(self, filters: Dict[str, Union[str, float]], query: str):
         
         metadata_filters = self._generate_filters(filters)
-        print(metadata_filters)
         request = glm.QueryCorpusRequest(name=self.corpus_name,
                                         query=query,
                                         metadata_filters=metadata_filters)
@@ -190,12 +189,8 @@ class CorpusAgent:
                                         contents=[query_content],
                                         semantic_retriever=retriever_config,
                                         answer_style=answer_style)
-        print("req success")
         try:
             response = generative_service_client.generate_answer(req)
-            print("original response from corpus")
-            print(response)
-            print("end!!!\n\n")
             response_text = ""
             # print(type(response.answer.content.parts[0].text))
             for part in response.answer.content.parts:
