@@ -46,11 +46,11 @@ def generate_context(query: str, filters: Dict[str, Dict]) -> Dict[str, float]:
         # print(text)
     print("\n\ncontext:")
     print(context)
-    # print("\n\nreference")
-    # # for i, item in enumerate(reference, 1):
-    # #     item = json.dumps(item, indent=4)
-    # #     print(item)
-    # print(reference)
+    print("\n\nreference")
+    # for i, item in enumerate(reference, 1):
+    #     item = json.dumps(item, indent=4)
+    #     print(item)
+    print(reference)
     return context, reference
         
 def answer_on_your_own(answer:str):
@@ -78,7 +78,7 @@ def parse_response(response):
 
 
 class ChatAgent():
-    def __init__(self, generation_config):
+    def __init__(self):
         # chat = None,
         self.model = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
@@ -138,12 +138,13 @@ class ChatAgent():
         print("query: ")
         print(query)
         response = chat.send_message(query)
-        # print(response)
+
         answer = parse_response(response)
-        if answer == "call" or answer == "call\n" or answer == "call \n":
+        if answer == "query_corpus":
             context, reference = generate_context(query=query, filters=filters)
             response2 = chat.send_message(context)
-
+            print(response2)
+            print(chat.history)
             answer2 = parse_response(response2)
             return answer2, reference
 
@@ -156,14 +157,7 @@ class ChatAgent():
 
 if __name__=="__main__":
 
-    
-    generation_config = {
-        "temperature": 0.3,
-        "top_p": 0.95,
-        "top_k": 64,
-        "max_output_tokens": 8192,
-        "response_mime_type": "text/plain",
-    }
+    agent = ChatAgent()
 
     filters = {
         "min_lat":24.0,
@@ -174,4 +168,4 @@ if __name__=="__main__":
         "time_range": 60
     }
     # agent.start_chat()
-    agent.chat(message="what is the color of the pants of sponge bob?", filters=filters, current_lat=25.09871, current_lng=121.9876)
+    agent.chat(message="Are there dangerous acitivity nearby?", filters=filters, current_lat=25.09871, current_lng=121.9876)
