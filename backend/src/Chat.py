@@ -10,6 +10,7 @@ import os
 from typing import Optional, List, Dict, Union
 from Corpus import CorpusAgent
 import json
+import datetime
 
 # set keys
 load_dotenv()
@@ -36,6 +37,9 @@ def generate_context(query: str, filters: Dict[str, Union[str, float]]) -> Dict[
         lng = metadata[1].numeric_value
         timestamp = metadata[2].numeric_value
 
+        time = datetime.fromtimestamp(timestamp)
+        time = time.strftime("%y%m%d %H%M%S")
+        
         context += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
         i += 1
         ref = {
