@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, constr, HttpUrl
 from typing import List, Optional, Union
@@ -10,6 +10,7 @@ import logfire
 import google.ai.generativelanguage as glm
 from google.oauth2 import service_account
 
+from TranslationModel import TranslationModel
 from PhotoModel import PhotoModel
 from Corpus import CorpusAgent
 from Chat import ChatAgent
@@ -49,7 +50,7 @@ class AskResponse(BaseModel):
 
 class ShareRequest(BaseModel):
     content: str = Field(..., description="User-provided text related to the image.")
-    uri: Optional[HttpUrl] = Field(..., description="URL of the uploaded image.")
+    file: Optional[UploadFile] = File(None)
     metadata: MetaData
 
 
@@ -78,6 +79,13 @@ async def ask(ask_request: AskRequest) -> AskResponse:
         ask_request.filter.cur_time = ask_request.filter.cur_time.strftime("%Y-%m-%d %H:%M:%S")
         agent = ChatAgent()
         print("ask: ", ask_request.content)
+
+        ## Translate
+        trans_model = TranslationModel()
+        ask_request.content = trans_model.translate_to_english(ask_request.content)
+        print("after trans ask: ", ask_request.content)
+
+
         answer, references = agent.chat(
             message=ask_request.content,
             filters=ask_request.filter.dict(),
@@ -105,14 +113,22 @@ async def ask(ask_request: AskRequest) -> AskResponse:
             detail="Internal server error. Please try again later."
         )
 
-
-
 @app.post("/share")
 async def share(share_request: ShareRequest) -> ShareResponse:
+    file_location = None
+    if share_request.file != None:
+        try:
+            file_location = f"temp/{share_request.file.filename}"
+            with open(file_location, "wb") as buffer:
+                buffer.write(await share_request.file.read())
+        except Exception as e:
+            file_location = None
+            print(f"Error occurred in updating image(): {e}")
+
     try:
         print("share: ", share_request.content)
         photo_model = PhotoModel()
-        result = photo_model.analyze_image(share_request.uri, share_request.content)
+        result = photo_model.analyze_image(file_location, share_request.content)
         load_dotenv()
         DEV_DOC = os.getenv("TEST_DOCUMENT")
         agent = CorpusAgent(document=DEV_DOC)
@@ -122,6 +138,8 @@ async def share(share_request: ShareRequest) -> ShareResponse:
             lng=share_request.metadata.lng,
             time=share_request.metadata.time.strftime("%Y-%m-%d %H:%M:%S")
         )
+        if file_location != None:
+            os.remove(file_location)
 
         return ShareResponse(status="OK")
 
@@ -131,6 +149,7 @@ async def share(share_request: ShareRequest) -> ShareResponse:
             status_code=500,
             detail="Internal server error. Please try again later."
         )
+
 '''
 @app.post("/share")
 async def share(share_request: ShareRequest) -> ShareResponse:

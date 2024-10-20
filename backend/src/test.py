@@ -1,5 +1,6 @@
 import os
 from PhotoModel import PhotoModel
+from TranslationModel import TranslationModel
 
 def test_photomodel_with_image_and_text(image_path: str, user_text: str):
     """Test PhotoModel with both image and user input."""
@@ -14,11 +15,20 @@ def test_photomodel_with_image_and_text(image_path: str, user_text: str):
 
     print(f"Result: {result}")
 
+
+def test_trans(mes: str):
+    model = TranslationModel()
+    result = model.translate_to_english(mes)
+    return result
+
 if __name__ == "__main__":
     test_image_path = "test_images/test_image.jpg"
     user_text = "The person in photo is girl"
+    mes = "哈囉"
 
     # Run the test
-    print("Running PhotoModel Test...")
-    test_photomodel_with_image_and_text(test_image_path, user_text)
+    print("Running Trans Test...")
+    res = test_trans(mes)
+    print(res)
+    
 
