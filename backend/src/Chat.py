@@ -46,6 +46,7 @@ def generate_context(query: str, filters: Dict[str, Union[str, float]]) -> Dict[
         }
         reference.append(ref)
         # print(text)
+
     return context, reference
         
 def answer_on_your_own(answer:str):

@@ -169,6 +169,7 @@ class CorpusAgent:
     def query_corpus(self, filters: Dict[str, Union[str, float]], query: str):
         
         metadata_filters = self._generate_filters(filters)
+        print(metadata_filters)
         request = glm.QueryCorpusRequest(name=self.corpus_name,
                                         query=query,
                                         metadata_filters=metadata_filters)

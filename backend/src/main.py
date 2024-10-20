@@ -5,7 +5,6 @@ from typing import List, Optional, Union
 from datetime import datetime
 from dotenv import load_dotenv
 import os
-import logfire
 
 import google.ai.generativelanguage as glm
 from google.oauth2 import service_account
