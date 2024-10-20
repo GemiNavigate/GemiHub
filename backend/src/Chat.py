@@ -26,17 +26,15 @@ def generate_context(query: str, filters: Dict[str, Union[str, float]]) -> Dict[
     context = ""
     reference = []
     i = 0
+    if len(response) == 0:
+        context = "No relevant context provided in this region"
+        return context, reference
     for item in response:
         text = item.chunk.data.string_value
         metadata = item.chunk.custom_metadata
         lat = metadata[0].numeric_value
         lng = metadata[1].numeric_value
         timestamp = metadata[2].numeric_value
-
-        # if not (lat <= filters["max_lat"] and lat >= filters["min_lat"] and lng <= filters["max_lng"] and lat >= filters["min_lng"]):
-        #     print(f"{filters['max_lat']} {lat} {filters['min_lat']}")
-        #     print(f"{filters['max_lng']} {lng} {filters['min_lng']}\n\n")
-        #     continue     
 
         context += f"context {i}:\nlocation: ({lat}, {lng})\ninformation: {text.lstrip()}\n"
         i += 1
@@ -116,6 +114,7 @@ class ChatAgent():
 
             IMPORTANT: 
             Tell me the credibility of your conclusion based on proportion and amount of different opinions about this subject.
+            You DO have access to realtime info, just that if the there are relevant context or not.
 
             Otherwise answer freely.
             '''
@@ -135,8 +134,9 @@ class ChatAgent():
         question: {message} 
         '''
         response = chat.send_message(query)
-
+        
         answer = parse_response(response)
+        
         if answer == "query_corpus":
             context, reference = generate_context(query=query, filters=filters)
             response2 = chat.send_message(context)
@@ -146,7 +146,8 @@ class ChatAgent():
             final_answer = f"Based on crowd sourced answer:\n {answer2} "
             print(final_answer)
             return final_answer, reference
-
+        else:
+            print(answer)
         
 
         return answer, None
@@ -158,15 +159,15 @@ if __name__=="__main__":
     agent = ChatAgent()
 
     filters = {
-        "min_lat": 24.788461663075736, 
-        "max_lat": 24.788972796634337,
-        "min_lng": 120.99550571888568,
-        "max_lng": 120.99611117716735,
+        "min_lat": 24.78598, 
+        "max_lat":24.78700,
+        "min_lng": 120.99675,
+        "max_lng": 120.99676,
         "cur_time": "2024-10-20 12:00:00",
         "time_range": 60
     }
     # agent.start_chat()
-    agent.chat(message="Are there dangerous events?", filters=filters, current_lat=24.788665553818, current_lng=120.99564522194252)
+    agent.chat(message="Is there many people in the library?", filters=filters, current_lat=24.788665553818, current_lng=120.99564522194252)
 
 
     # '''
