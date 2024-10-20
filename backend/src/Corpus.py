@@ -149,8 +149,18 @@ class CorpusAgent:
                 )
             ]
         )
+        time_filter2 = glm.MetadataFilter(
+            key="chunk.custom_metadata.timestamp",
+            conditions=[
+                glm.Condition(
+                    numeric_value=(timestamp),
+                    operation=glm.Condition.Operator.LESS_EQUAL
+                )
+            ]
+        )
 
         metadata_filters.append(time_filter)
+        metadata_filters.append(time_filter2)
         
         # print(metadata_filters)
         return metadata_filters
