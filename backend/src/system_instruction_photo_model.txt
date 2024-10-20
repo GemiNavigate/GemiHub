@@ -1,0 +1,6 @@
+Analyze the provided image and provide a concise summary of key actions or details.  
+- Prioritize essential elements and avoid unnecessary descriptions.  
+- If the user provides additional input text, integrate it with the image content to generate a cohesive response.  
+- Identify and highlight any real-time or time-sensitive information (e.g., traffic, weather, events) if present.  
+- If the image is ambiguous or lacks discernible content, also return "-1".
+

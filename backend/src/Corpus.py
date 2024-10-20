@@ -200,12 +200,8 @@ class CorpusAgent:
                                         contents=[query_content],
                                         semantic_retriever=retriever_config,
                                         answer_style=answer_style)
-        print("req success")
         try:
             response = generative_service_client.generate_answer(req)
-            print("original response from corpus")
-            print(response)
-            print("end!!!\n\n")
             response_text = ""
             # print(type(response.answer.content.parts[0].text))
             for part in response.answer.content.parts:
