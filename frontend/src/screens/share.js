@@ -132,6 +132,7 @@ export default function ShareScreen({}) {
 
     const [postText, setPostText] = useState(''); 
     const [selectedImage, setSelectedImage] = useState(null);
+    const [sendImage, setSendImage] = useState(null);
     const [userPosts, setUserPosts] = useState({}); // To store the user posts
     const slideAnim = useRef(new Animated.Value(0)).current;
     const { tokens, setTokens } = useContext(TokenContext);
@@ -251,7 +252,12 @@ export default function ShareScreen({}) {
         if (postText.trim() || selectedImage) {
             // get time
             const timestamp = new Date().toISOString();
-
+            const formData = new FormData();
+            formData.append('file',{
+                uri: sendImage?.uri,
+                type: sendImage?.type,
+                name: sendImage?.fileName,
+            });
             // Save the post (text + image) and location
             const newPost = {
                 location: currentLocation,
@@ -262,12 +268,14 @@ export default function ShareScreen({}) {
             // TODO: 後端獲取資料: JSON.stringify(newPost)
             const dataToSend = {
                 content: postText.trim(),
+                file: null,
                 metadata: {
                     lat: currentLocation.latitude,
                     lng: currentLocation.longitude,
                     time: timestamp,  // Current time
                 }
-              };
+            };
+            console.log(JSON.stringify(dataToSend));
             setUserPosts(newPost);
             increaseTokens();
 
@@ -285,7 +293,7 @@ export default function ShareScreen({}) {
                     },
                     body: JSON.stringify(dataToSend),  
                 });
-                // console.log(JSON.stringify(dataToSend));
+                console.log(JSON.stringify(dataToSend));
                 if (response.ok) {
                     // Handle success (optional: handle the returned response)
                     const responseData = await response.json();
@@ -310,8 +318,10 @@ export default function ShareScreen({}) {
             },
             response => {
                 if (!response.didCancel && !response.errorCode) {
-                    const uri = response.assets[0]?.uri;
-                    setSelectedImage(uri);
+                    const file = response.assets[0];
+                    setSelectedImage(file?.uri);
+                    setSendImage(file);
+                    console.log('file:', file);
                 }
             }
         );

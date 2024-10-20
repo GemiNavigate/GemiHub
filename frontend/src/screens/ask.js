@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { Image, View, Text, StyleSheet, Dimensions, TouchableOpacity, TextInput, FlatList, Platform, PermissionsAndroid, Animated, PanResponder } from 'react-native';
+import { Image, View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity, TextInput, FlatList, Platform, PermissionsAndroid, Animated, PanResponder } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete'
 import 'react-native-get-random-values';
 import { GOOGLE_MAPS_API_KEY } from '../config/constants';
 import GetLocation from 'react-native-get-location';
@@ -10,6 +10,107 @@ import { TokenContext, LocationContext } from './Context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const { width, height } = Dimensions.get('window');
+const mapstyle = [
+    {
+        "featureType": "administrative",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "poi",
+        "stylers": [
+            {
+                "visibility": "simplified"
+            }
+        ]
+    },
+    {
+        "featureType": "road",
+        "elementType": "labels",
+        "stylers": [
+            {
+                "visibility": "simplified"
+            }
+        ]
+    },
+    {
+        "featureType": "water",
+        "stylers": [
+            {
+                "visibility": "simplified"
+            }
+        ]
+    },
+    {
+        "featureType": "transit",
+        "stylers": [
+            {
+                "visibility": "simplified"
+            }
+        ]
+    },
+    {
+        "featureType": "landscape",
+        "stylers": [
+            {
+                "visibility": "simplified"
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "road.local",
+        "stylers": [
+            {
+                "visibility": "on"
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "visibility": "on"
+            }
+        ]
+    },
+    {
+        "featureType": "water",
+        "stylers": [
+            {
+                "color": "#abbaa4"
+            }
+        ]
+    },
+    {
+        "featureType": "transit.line",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#3f518c"
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "stylers": [
+            {
+                "color": "#ad9b8d"
+            }
+        ]
+    }
+]
 
 const styles = StyleSheet.create({
     container: {
@@ -161,7 +262,54 @@ const styles = StyleSheet.create({
         height: 40,
         width: 40,
         left: 0,
+    },
+    calloutContainer: {
+        backgroundColor: 'transparent',
+        alignItems: 'center',
+    },
+    calloutBubble: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)', // 調整背景透明度
+        borderRadius: 10,
+        padding: 10,
+        width: 200,
+        borderWidth: 1,  // 添加邊框
+        borderColor: 'rgba(112, 141, 129, 0.5)', 
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.15,  // 調整陰影透明度
+        shadowRadius: 3,
+        elevation: 5,
+    },
+    calloutTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 4,
+        lineHeight: 18,
+    },
+    calloutTime: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 1,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.1)',  // 添加分隔線
+        paddingTop: 4,
+    },
+    calloutArrow: {
+        width: 12,
+        height: 12,
+        backgroundColor: '#708D81', 
+        borderRightWidth: 1,  // 箭頭邊框
+        borderBottomWidth: 1,
+        borderColor: '#ddd',
+        transform: [{ rotate: '45deg' }],
+        marginTop: -6,
+        alignSelf: 'center',
     }
+    
 });
 
 
@@ -181,6 +329,7 @@ export default function AskerScreen() {
   /* animation */
   const [fixedPosition, setFixedPosition] = useState(false);
   const [position, setPosition] = useState(0);
+  const googlePlacesRef = useRef(null);
 
   useEffect(() => {
       const checkPermissions = async () => {
@@ -295,15 +444,15 @@ export default function AskerScreen() {
     const handleSubmit = async () => {
         try {
             setIsLoading(true);
-            // if(!selectedLocation){
-            //     const currentRegion = {
-            //         latitude: currentLocation.latitude,
-            //         longitude: currentLocation.longitude,
-            //         latitudeDelta: 0.01,
-            //         longitudeDelta: 0.01,
-            //     };
-            //     setSelectedLocation(currentRegion);
-            // }
+            if(!selectedLocation){
+                const currentRegion = {
+                    latitude: currentLocation.latitude,
+                    longitude: currentLocation.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                };
+                setSelectedLocation(currentRegion);
+            }
             if (selectedLocation || question) {
                 console.log('Selected Location:', selectedLocation);
                 console.log('Content:', question);
@@ -377,6 +526,7 @@ export default function AskerScreen() {
               ref={mapRef}
               provider={PROVIDER_GOOGLE}
               style={styles.map}
+              customMapStyle={mapstyle}
               region={currentLocation ? {
                   latitude: currentLocation.latitude,
                   longitude: currentLocation.longitude,
@@ -400,24 +550,37 @@ export default function AskerScreen() {
                   />
               )}
               {/* multiple reference marker  */}
-              {references.map((ref, index) => (
-                    <Marker
-                    key={index} // Add a unique key for each marker
+            {references.map((ref, index) => (
+                <Marker
+                    key={index}
                     coordinate={{
                         latitude: ref.lat,
                         longitude: ref.lng,
                     }}
-                    title={ref.info}
-                    description={formatDateTime(ref.time)}
                     pinColor="#F4D58D"
-                    />
-              ))}
+                >
+                    <Callout tooltip>
+                        <View style={styles.calloutContainer}>
+                            <View style={styles.calloutBubble}>
+                                <Text style={styles.calloutTitle}>
+                                    {ref.info}
+                                </Text>
+                                <Text style={styles.calloutTime}>
+                                    {formatDateTime(ref.time)}
+                                </Text>
+                            </View>
+                            <View style={styles.calloutArrow} />
+                        </View>
+                    </Callout>
+                </Marker>
+            ))}
           </MapView>
           
           {/* Input Box for Posting */}
           <View style={styles.searchContainer}>
             <View style={styles.searchInputContainer}>
                 <GooglePlacesAutocomplete 
+                    ref={googlePlacesRef}
                     placeholder="Search location"
                     placeholderTextColor="#b0b0b0"
                     fetchDetails={true}
@@ -434,7 +597,12 @@ export default function AskerScreen() {
                         moveToLocation(searchRegion.latitude, searchRegion.longitude);
                         setMapRegion(searchRegion);
                         setSelectedLocation(searchRegion);
+                        if (googlePlacesRef.current) {
+                            googlePlacesRef.current.setAddressText("");
+                        }
                     }}
+                    // Clear the search input
+                    
                     query={{
                         key: GOOGLE_MAPS_API_KEY, 
                         language: 'zh-TW',            
@@ -503,23 +671,6 @@ export default function AskerScreen() {
                 </TouchableOpacity>
             </View>
           </View>
-
-          {/* {cornerCoordinates && (
-                <View style={styles.coordinatesContainer}>
-                    <Text style={styles.coordinatesText}>
-                        NE: {cornerCoordinates.northEast.latitude.toFixed(6)}, {cornerCoordinates.northEast.longitude.toFixed(6)}
-                    </Text>
-                    <Text style={styles.coordinatesText}>
-                        SW: {cornerCoordinates.southWest.latitude.toFixed(6)}, {cornerCoordinates.southWest.longitude.toFixed(6)}
-                    </Text>
-                    <Text style={styles.coordinatesText}>
-                        NW: {cornerCoordinates.southWest.latitude.toFixed(6)}, {cornerCoordinates.northEast.longitude.toFixed(6)}
-                    </Text>
-                    <Text style={styles.coordinatesText}>
-                        SE: {cornerCoordinates.northEast.latitude.toFixed(6)}, {cornerCoordinates.southWest.longitude.toFixed(6)}
-                    </Text>
-                </View>
-            )} */}
 
           {answer && (
                 // <View style={styles.ansContainer}>
