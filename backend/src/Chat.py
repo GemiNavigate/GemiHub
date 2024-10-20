@@ -46,9 +46,6 @@ def generate_context(query: str, filters: Dict[str, Union[str, float]]) -> Dict[
         }
         reference.append(ref)
         # print(text)
-    for i, item in enumerate(reference, 1):
-        item = json.dumps(item, indent=4)
-        print(item)
     return context, reference
         
 def answer_on_your_own(answer:str):
@@ -141,13 +138,12 @@ class ChatAgent():
             context, reference = generate_context(query=query, filters=filters)
             response2 = chat.send_message(context)
             answer2 = parse_response(response2)
-            print('\n')
             
             final_answer = f"Based on crowd sourced answer:\n {answer2} "
-            print(final_answer)
             return final_answer, reference
         else:
-            print(answer)
+            print()
+            # print(answer)
         
 
         return answer, None
