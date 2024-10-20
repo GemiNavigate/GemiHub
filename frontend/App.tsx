@@ -13,8 +13,8 @@ function CustomHeader() {
   const { tokens } = useContext(TokenContext);
   return (
     <View style={styles.header}>
-      <Text style={styles.headerTitle}>GemiHub</Text>
-      {/* <Image source={require('./src/assets/logo.png')} style={{ width: 100, height: 100 }} /> */}
+      {/* <Text style={styles.headerTitle}>GemiHub</Text> */}
+      <Image source={require('./src/assets/logo_back.png')} style={{ width: 50, height: 50 }} />
       <View style={styles.tokenContainer}>
         <MaterialCommunityIcons name="currency-usd" size={24} color="#001427" style={styles.tokenIcon} />
         <Text style={styles.tokenText}>{tokens}</Text>
