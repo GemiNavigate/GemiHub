@@ -171,12 +171,6 @@ if __name__=="__main__":
         "max_lng": 120.99676,
         "cur_time": "2024-10-20 12:00:00",
         "time_range": 60
-        "min_lat": 24.78598, 
-        "max_lat":24.78700,
-        "min_lng": 120.99675,
-        "max_lng": 120.99676,
-        "cur_time": "2024-10-20 12:00:00",
-        "time_range": 60
     }
     # agent.start_chat()
     agent.chat(message="Is there many people in the library?", filters=filters, current_lat=24.788665553818, current_lng=120.99564522194252)
