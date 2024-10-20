@@ -8,6 +8,7 @@ from jsonschema import validate
 import uuid
 import os
 from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Union
 from Corpus import CorpusAgent
 import json
 import datetime
@@ -27,6 +28,9 @@ def generate_context(query: str, filters: Dict[str, Union[str, float]]) -> Dict[
     context = ""
     reference = []
     i = 0
+    if len(response) == 0:
+        context = "No relevant context provided in this region"
+        return context, reference
     if len(response) == 0:
         context = "No relevant context provided in this region"
         return context, reference
@@ -50,9 +54,6 @@ def generate_context(query: str, filters: Dict[str, Union[str, float]]) -> Dict[
         }
         reference.append(ref)
         # print(text)
-    for i, item in enumerate(reference, 1):
-        item = json.dumps(item, indent=4)
-        print(item)
     return context, reference
         
 def answer_on_your_own(answer:str):
@@ -119,6 +120,7 @@ class ChatAgent():
             IMPORTANT: 
             Tell me the credibility of your conclusion based on proportion and amount of different opinions about this subject.
             You DO have access to realtime info, just that if the there are relevant context or not.
+            You DO have access to realtime info, just that if the there are relevant context or not.
 
             Otherwise answer freely.
             '''
@@ -139,16 +141,16 @@ class ChatAgent():
         '''
         response = chat.send_message(query)
         
+        
         answer = parse_response(response)
+        
         
         if answer == "query_corpus":
             context, reference = generate_context(query=query, filters=filters)
             response2 = chat.send_message(context)
             answer2 = parse_response(response2)
-            print('\n')
             
             final_answer = f"Based on crowd sourced answer:\n {answer2} "
-            print(final_answer)
             return final_answer, reference
         else:
             print(answer)
@@ -169,8 +171,15 @@ if __name__=="__main__":
         "max_lng": 120.99676,
         "cur_time": "2024-10-20 12:00:00",
         "time_range": 60
+        "min_lat": 24.78598, 
+        "max_lat":24.78700,
+        "min_lng": 120.99675,
+        "max_lng": 120.99676,
+        "cur_time": "2024-10-20 12:00:00",
+        "time_range": 60
     }
     # agent.start_chat()
+    agent.chat(message="Is there many people in the library?", filters=filters, current_lat=24.788665553818, current_lng=120.99564522194252)
     agent.chat(message="Is there many people in the library?", filters=filters, current_lat=24.788665553818, current_lng=120.99564522194252)
 
 
@@ -189,9 +198,28 @@ if __name__=="__main__":
     #   }
     # }
     # '''
+    # '''
+    # {
+    #   "content": "tell me how many people here",
+    #   "cur_lat": -90,
+    #   "cur_lng": -180,
+    #   "filter": {
+    #     "min_lat": -90,
+    #     "max_lat": 90,
+    #     "min_lng": -180,
+    #     "max_lng": 180,
+    #     "cur_time": "2024-10-19T12:09:57.034Z",
+    #     "time_range": 10
+    #   }
+    # }
+    # '''
 
     # print(DEV_DOC)
     # corpus_agent = CorpusAgent(document=DEV_DOC)
+    # print(DEV_DOC)
+    # corpus_agent = CorpusAgent(document=DEV_DOC)
     
+    # content = '''location: (30.0988, 121.98765) Information: Whoa a traffic accident! Send Help! '''
+    # corpus_agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
     # content = '''location: (30.0988, 121.98765) Information: Whoa a traffic accident! Send Help! '''
     # corpus_agent.add_info_to_document(content=content, lat=30.0988, lng=121.98765, time="2024-10-19 10:00:00")
