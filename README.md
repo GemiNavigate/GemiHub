@@ -7,9 +7,7 @@ The messages from all sources are compiled into a central corpus, and when queri
 
 By intgrating the interesting mechanism of "Leaving a message at a spot for others to find", and the idea that "If I provide information, I can get information when I want to", the app explores the possibilities of an AI integrated
 
-<iframe src="https://drive.google.com/file/d/1-c1vhY34q0JjK2FYFTdky-WX0Mmko52e/view?usp=sharing" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
-
-![alt text](https://youtu.be/sO3BaNPBr3U)
+[![alt text](https://img.lovepik.com/free-png/20210919/lovepik-cute-pig-image-png-image_400807463_wh1200.png)](https://youtu.be/sO3BaNPBr3U)
 
 [DEMO Video](https://drive.google.com/file/d/1-c1vhY34q0JjK2FYFTdky-WX0Mmko52e/view?usp=sharing)
 # structure
