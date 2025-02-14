@@ -1,5 +1,5 @@
-
 # GemiHub
+## introduction
 With inspiration from the evolving trends of smart cities, realtime and relevant information of a targeted region becomes more and more desired and can benefit many people. 
 we propose a method that utilizes people and their phones as sources of information - **crowd sourcing**
 
